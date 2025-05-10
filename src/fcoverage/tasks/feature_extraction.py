@@ -2,6 +2,7 @@ import os
 from .base import TasksBase
 from fcoverage.lib.llm import LLMWrapper
 
+
 class FeatureExtractionTask(TasksBase):
 
     def __init__(self, args, config):
@@ -28,7 +29,11 @@ class FeatureExtractionTask(TasksBase):
         """
         Load the feature extraction prompt from the config.
         """
-        filepath = os.path.join(self.args.project, self.config["prompts-directory"], "feature_extraction.txt")
+        filepath = os.path.join(
+            self.args.project,
+            self.config["prompts-directory"],
+            "feature_extraction.txt",
+        )
         with open(filepath, "r") as file:
             self.feature_extraction_prompt = file.read()
 
@@ -37,8 +42,10 @@ class FeatureExtractionTask(TasksBase):
         Join the documents into a single string for processing.
         """
         return "\n\n".join([f"{doc[0]}\n{doc[1]}" for doc in self.documents])
-        
+
     def run(self):
-        self.llm.invoke({
-            "documents": self.join_documents(),
-        })
+        self.llm.invoke(
+            {
+                "documents": self.join_documents(),
+            }
+        )
