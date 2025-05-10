@@ -39,16 +39,21 @@ def load_config(project_path):
     return config
 
 
+def run_tasks(args, config):
+    if args.task == "feature-extraction":
+        print("Running Feature Extraction Task")
+        FeatureExtractionTask(config=config).run()
+    elif args.task == "test-analysis":
+        TestAnalysisTask(config=config).run()
+
+
 def main():
     args = get_args()
 
     try:
         config = load_config(args.project)
         print(yaml.dump(config, indent=2))
-
-        FeatureExtractionTask(config=config).run()
-        TestAnalysisTask(config=config).run()
-        ReportGenerationTask(config=config).run()
+        run_tasks(args, config)
 
     except (FileNotFoundError, yaml.YAMLError) as e:
         print(f"Error: {e}")
@@ -60,6 +65,12 @@ def get_args():
         "--project",
         type=str,
         help=f"Path to the main project directory.",
+        required=True,
+    )
+    parser.add_argument(
+        "--task",
+        choices=["feature-extraction", "test-analysis"],
+        help="Task to run.",
         required=True,
     )
     args = parser.parse_args()
