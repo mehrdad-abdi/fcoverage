@@ -1,0 +1,18 @@
+# This is a sample configuration file for the target repository.
+
+feature-file: .fcoverage/feature-list.md
+report-file: .fcoverage/report.md
+prompts-directory: .fcoverage/prompts
+
+documents:
+    README.md
+    # docs/
+    # examples/
+
+tests:
+    tests/
+    # unittests/
+
+llm-model: gemini-2.0-flash # gemini-2.0-flash, gpt-4, gpt-4o-mini, claude-3-5-sonnet-latest
+llm-model-provider: google  # anthropic, openai, google
+llm-api-key-env-var: LLM_API_KEY
