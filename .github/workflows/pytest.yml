@@ -17,10 +17,12 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pwd
-        ls
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
     - name: Run pytest
-      run: pytest tests/
+      run: |
+        pwd
+        ls -la
+        ls -la tests
+        pytest tests/
