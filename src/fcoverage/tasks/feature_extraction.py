@@ -22,7 +22,7 @@ class FeatureExtractionTask(TasksBase):
         self.load_documents()
         self.load_feature_extraction_prompt()
         self.llm.prepare(self.feature_extraction_prompt)
-        if self.args["github"]:
+        if "github" in self.args:
             self.github_details = get_github_repo_details(self.args["github"])
 
     def load_documents(self):
@@ -30,8 +30,10 @@ class FeatureExtractionTask(TasksBase):
         Load documents from the specified directorieis in config.
         """
         docs = self.config["documents"]
+        print(type(docs))
         for doc in docs:
-            with open(os.path.join(self.args["project"], doc), "r") as file:
+            filename = os.path.join(self.args["project"], doc)
+            with open(filename, "r") as file:
                 content = file.read()
                 self.documents.append((doc, content))
 
@@ -64,5 +66,17 @@ class FeatureExtractionTask(TasksBase):
             }
         )
 
+    def write_response_to_file(self, response):
+        filename = os.path.join(self.args["project"], self.config["feature-file"])
+        with open(
+            filename,
+            "w",
+        ) as file:
+            file.write(response)
+        print(f"Feature extraction results written to {filename}")
+
     def run(self):
         response = self.invoke_llm()
+        self.write_response_to_file(response.content)
+        print("Feature extraction completed successfully.")
+        return True
