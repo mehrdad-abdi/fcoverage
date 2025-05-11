@@ -6,8 +6,8 @@ prompts-directory: .fcoverage/prompts
 
 documents:
     README.md
-    # docs/
-    # examples/
+    # docs/file1.md
+    # examples/file2.md
 
 tests:
     tests/

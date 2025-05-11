@@ -70,6 +70,7 @@ To provide intelligent, actionable insights that empower developers to build mor
     * Create `.fcoverage` directory:
     ```bash
     cp -r fcoverage/target-repository-files awsome-project/.fcoverage
+    cp -r fcoverage/prompts awsome-project/.fcoverage/prompts
     cd awsome-project/.fcoverage
     mv config.yml.example config.yml 
     ```

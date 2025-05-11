@@ -1,0 +1,24 @@
+You are given a description of a software project.
+Your task is to carefully analyze the provided information and extract a **comprehensive list of features that should be covered by tests**.
+
+While reviewing the project, consider and answer the following questions:
+
+- What are the **primary goals** of this project?
+- As a potential user, what **features would you expect** it to include?
+- What other **existing projects or products** share similar goals or functionality? Use internet sources if needed to support your analysis.
+- Which **features are unique differentiators** of this project compared to similar products?
+- What features are **most likely to change or evolve** over time?
+- What are potential **edge cases or failure scenarios** that should be tested?
+- Which features would **significantly impact user experience** if they were broken or unreliable?
+- For each identified feature, assign a testing priority level based on its importance to functionality and user experience: **High, Medium, or Low**.
+
+Be **thorough, structured, and test-focused** in your analysis.
+The output should include project name, description, the main goal(s), the list of features sorted by their importance.
+
+**Project name:** {project_name}
+
+**Project description:** {project_description}
+
+**Documents:**
+
+{documents}
