@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 @pytest.fixture
 def mock_requests_get_github():
-    with patch("fcoverage.lib.http.requests.get") as mock_get:
+    with patch("fcoverage.utils.http.requests.get") as mock_get:
         # Mock response object
         mock_get.return_value.status_code = 200
         mock_get.return_value.json.return_value = {
