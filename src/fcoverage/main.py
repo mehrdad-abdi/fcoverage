@@ -4,7 +4,6 @@ import os
 from fcoverage.tasks import (
     FeatureExtractionTask,
     TestAnalysisTask,
-    ReportGenerationTask,
 )
 
 
@@ -61,6 +60,12 @@ def main():
 
 def get_args():
     parser = argparse.ArgumentParser(description="Feature Coverage Analysis Tool")
+    parser.add_argument(
+        "--gitthub",
+        type=str,
+        help=f"The GitHub address of the project.",
+        required=False,
+    )
     parser.add_argument(
         "--project",
         type=str,
