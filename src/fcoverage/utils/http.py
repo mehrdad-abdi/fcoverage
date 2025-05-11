@@ -29,7 +29,9 @@ def get_github_repo_details(repo_url):
         return {
             "owner": metadata["owner"]["login"],
             "repo_name": metadata["name"],
-            "description": metadata["description"]
+            "description": metadata["description"],
         }
     else:
-        raise Exception(f"Failed to fetch metadata: {response.status_code} - {response.text}")
+        raise Exception(
+            f"Failed to fetch metadata: {response.status_code} - {response.text}"
+        )

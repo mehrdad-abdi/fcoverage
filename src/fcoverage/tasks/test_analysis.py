@@ -1,6 +1,6 @@
 import os
 from .base import TasksBase
-from fcoverage.lib.llm import LLMWrapper
+from fcoverage.utils.llm import LLMWrapper
 
 
 class TestAnalysisTask(TasksBase):
