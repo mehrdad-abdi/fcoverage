@@ -1,3 +1,4 @@
+import sys
 import yaml
 import argparse
 import os
@@ -22,23 +23,23 @@ def load_config(project_path):
     return config
 
 
-def run_tasks(args, config):
-    if args.task == "feature-extraction":
-        FeatureExtractionTask(args=args, config=config).run()
-    elif args.task == "test-analysis":
-        TestAnalysisTask(args=args, config=config).run()
+def run_task(args, config):
+    if args["task"] == "feature-extraction":
+        task = FeatureExtractionTask(args=args, config=config)
+    elif args["task"] == "test-analysis":
+        TestAnalysisTask(args=args, config=config)
+    task.prepare()
+    return task.run()
 
 
 def main():
     args = get_args()
 
-    try:
-        config = load_config(args.project)
-        print(yaml.dump(config, indent=2))
-        run_tasks(vars(args), config)
-
-    except (FileNotFoundError, yaml.YAMLError) as e:
-        print(f"Error: {e}")
+    config = load_config(args.project)
+    print(yaml.dump(config, indent=2))
+    if not run_task(vars(args), config):
+        return 1
+    return 0
 
 
 def get_args():
@@ -66,4 +67,4 @@ def get_args():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

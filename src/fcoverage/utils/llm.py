@@ -16,7 +16,7 @@ class LLMWrapper:
 
     def load_api_key(self):
         match self.model_provider:
-            case "google":
+            case "google_genai":
                 os.environ["GOOGLE_API_KEY"] = os.environ.get(self.api_key_env_var)
             case "openai":
                 os.environ["OPENAI_API_KEY"] = os.environ.get(self.api_key_env_var)
