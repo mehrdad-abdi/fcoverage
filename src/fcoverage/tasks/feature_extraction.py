@@ -1,7 +1,7 @@
 import os
 from .base import TasksBase
-from fcoverage.lib.llm import LLMWrapper
-from fcoverage.lib.http import get_github_repo_details
+from fcoverage.utils.llm import LLMWrapper
+from fcoverage.utils.http import get_github_repo_details
 
 
 class FeatureExtractionTask(TasksBase):
