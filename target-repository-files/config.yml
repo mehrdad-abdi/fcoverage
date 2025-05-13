@@ -10,9 +10,11 @@ documents:
     # - examples/file2.md
 
 tests:
-    tests/
-    # unittests/
+    - tests/
+    # - unittests/
+
+# List of supported LLM models: https://python.langchain.com/docs/integrations/chat/
+# Don't forget to set the environment variable like `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
 
 llm-model: gemini-2.0-flash # gemini-2.0-flash, gpt-4, gpt-4o-mini, claude-3-5-sonnet-latest
-llm-model-provider: google  # anthropic, openai, google
-llm-api-key-env-var: LLM_API_KEY
+llm-model-provider: google_genai  # anthropic, openai, google_genai

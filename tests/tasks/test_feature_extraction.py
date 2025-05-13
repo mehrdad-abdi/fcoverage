@@ -15,12 +15,6 @@ PROMPT_TEMPLATE = """blah blah blah
 {documents}
 """
 
-
-@pytest.fixture
-def set_env(config):
-    os.environ[config["llm-api-key-env-var"]] = "your_api_key"
-
-
 @pytest.fixture
 def args():
     return {
@@ -37,7 +31,6 @@ def config():
         "prompts-directory": "prompts",
         "llm-model": "gemini-2.0-flash",
         "llm-model-provider": "openai",
-        "llm-api-key-env-var": "LLM_API_KEY",
     }
 
 
@@ -73,7 +66,7 @@ def mock_llm():
 
 
 def test_ask_question(
-    args, config, mock_open_files, set_env, mock_llm, mock_requests_get_github
+    args, config, mock_open_files, mock_llm, mock_requests_get_github
 ):
     _, mock_chat_model = mock_llm
 
