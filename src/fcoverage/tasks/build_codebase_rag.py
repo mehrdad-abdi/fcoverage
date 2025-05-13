@@ -1,2 +1,3 @@
 
 class FeatureExtractionTask(TasksBase):
+    pass
