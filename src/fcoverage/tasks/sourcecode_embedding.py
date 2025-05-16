@@ -36,6 +36,7 @@ class SourceCodeEmbeddingTask(TasksBase):
     def run(self):
         self.build_chunks_for_python_source()
         self.build_index()
+        return True
 
     def build_chunks_for_python_source(self):
         source_folder = os.path.join(self.args["project"], self.config["src"])

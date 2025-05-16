@@ -1,6 +1,6 @@
 from fcoverage.tasks import FeatureExtractionTask
 import pytest
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import MagicMock, patch
 from langchain_core.prompt_values import HumanMessage, ChatPromptValue
 
 PROMPT_TEMPLATE = """blah blah blah
@@ -11,46 +11,7 @@ PROMPT_TEMPLATE = """blah blah blah
 
 **Documents:**
 
-{documents}
-"""
-
-
-@pytest.fixture
-def args():
-    return {
-        "project": "test_project",
-        "github": "https://github.com/octocat/Hello-World",
-        "prompts-directory": "prompts",
-    }
-
-
-@pytest.fixture
-def config():
-    return {
-        "documents": ["doc1.txt", "doc2.txt"],
-        "prompts-directory": "prompts",
-        "llm-model": "gemini-2.0-flash",
-        "llm-model-provider": "openai",
-    }
-
-
-@pytest.fixture
-def mock_open_files(args, config):
-    # Mock file contents for multiple files
-    def side_effect_for_open(filename, *argsx, **kwargsx):
-        prompt_directory = f"{args['project']}/{config['prompts-directory']}"
-        if filename == f"{args['project']}/doc1.txt":
-            return mock_open(read_data="Content of doc1")()
-        elif filename == f"{args['project']}/doc2.txt":
-            return mock_open(read_data="Content of doc2")()
-        elif filename == f"{prompt_directory}/feature_extraction.txt":
-            return mock_open(read_data=PROMPT_TEMPLATE)()
-        else:
-            raise FileNotFoundError(f"File {filename} not found.")
-
-    with patch("builtins.open") as mock_file:
-        mock_file.side_effect = side_effect_for_open
-        yield mock_file  # Provide the mock to the test
+{documents}"""
 
 
 @pytest.fixture
@@ -64,7 +25,10 @@ def mock_llm():
 
 
 def test_ask_question(
-    args, config, mock_open_files, mock_llm, mock_requests_get_github
+    args,
+    config,
+    mock_llm,
+    mock_requests_get_github,
 ):
     _, mock_chat_model = mock_llm
 
@@ -73,7 +37,7 @@ def test_ask_question(
     response = task.invoke_llm()
 
     expected_prompt = PROMPT_TEMPLATE.format(
-        project_name="Hello-World",
+        project_name="dummy_project",
         project_description="This your first repo!",
         documents="doc1.txt\nContent of doc1\n\ndoc2.txt\nContent of doc2",
     )
