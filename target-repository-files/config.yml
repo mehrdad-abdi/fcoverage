@@ -3,18 +3,23 @@
 feature-file: .fcoverage/feature-list.md
 report-file: .fcoverage/report.md
 prompts-directory: .fcoverage/prompts
+rag-save-location: .fcoverage/rag
 
 documents:
     - README.md
     # - docs/file1.md
     # - examples/file2.md
 
-tests:
-    - tests/
-    # - unittests/
+tests: tests
+source: src
 
 # List of supported LLM models: https://python.langchain.com/docs/integrations/chat/
-# Don't forget to set the environment variable like `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
 
 llm-model: gemini-2.0-flash # gemini-2.0-flash, gpt-4, gpt-4o-mini, claude-3-5-sonnet-latest
 llm-model-provider: google_genai  # anthropic, openai, google_genai
+# Don't forget to set the environment variable like `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
+
+embedding-model: models/gemini-embedding-exp-03-07
+embedding-model-provider: google_genai  # "offline" or use online models like openai, google_genai, anthropic
+# If online, don't forget to set the environment variable like `OPENAI_API_KEY` or `GOOGLE_GENAI_API_KEY`
+embedding-batch-size: 32

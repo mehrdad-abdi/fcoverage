@@ -3,5 +3,8 @@ class TasksBase:
         self.args = args
         self.config = config
 
+    def prepare(self):
+        raise NotImplementedError("Subclasses must implement this method")
+
     def run(self):
         raise NotImplementedError("Subclasses must implement this method")

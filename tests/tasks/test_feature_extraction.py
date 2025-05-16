@@ -15,6 +15,7 @@ PROMPT_TEMPLATE = """blah blah blah
 {documents}
 """
 
+
 @pytest.fixture
 def args():
     return {
