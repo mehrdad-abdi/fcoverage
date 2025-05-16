@@ -1,4 +1,3 @@
-import os
 from fcoverage.tasks import FeatureExtractionTask
 import pytest
 from unittest.mock import MagicMock, mock_open, patch
@@ -39,14 +38,12 @@ def config():
 def mock_open_files(args, config):
     # Mock file contents for multiple files
     def side_effect_for_open(filename, *argsx, **kwargsx):
+        prompt_directory = f"{args['project']}/{config['prompts-directory']}"
         if filename == f"{args['project']}/doc1.txt":
             return mock_open(read_data="Content of doc1")()
         elif filename == f"{args['project']}/doc2.txt":
             return mock_open(read_data="Content of doc2")()
-        elif (
-            filename
-            == f"{args['project']}/{config['prompts-directory']}/feature_extraction.txt"
-        ):
+        elif filename == f"{prompt_directory}/feature_extraction.txt":
             return mock_open(read_data=PROMPT_TEMPLATE)()
         else:
             raise FileNotFoundError(f"File {filename} not found.")

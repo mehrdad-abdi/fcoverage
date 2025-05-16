@@ -3,8 +3,6 @@ from fcoverage.utils.code.python_utils import (
     process_python_file,
 )
 
-import pytest
-
 FAKE_SRC_MAIN = """
 import os
 from lib.lib import greet, add_numbers as do_sum
