@@ -4,7 +4,8 @@ import argparse
 import os
 from fcoverage.tasks import (
     FeatureExtractionTask,
-    TestAnalysisTask,
+    AnalyseTestsTask,
+    SourceCodeEmbeddingTask,
 )
 
 
@@ -26,8 +27,10 @@ def load_config(project_path):
 def run_task(args, config):
     if args["task"] == "feature-extraction":
         task = FeatureExtractionTask(args=args, config=config)
+    elif args["task"] == "code-analysis":
+        task = SourceCodeEmbeddingTask(args=args, config=config)
     elif args["task"] == "test-analysis":
-        TestAnalysisTask(args=args, config=config)
+        task = AnalyseTestsTask(args=args, config=config)
     task.prepare()
     return task.run()
 
@@ -58,7 +61,7 @@ def get_args():
     )
     parser.add_argument(
         "--task",
-        choices=["feature-extraction", "test-analysis"],
+        choices=["feature-extraction", "code-analysis", "test-analysis"],
         help="Task to run.",
         required=True,
     )

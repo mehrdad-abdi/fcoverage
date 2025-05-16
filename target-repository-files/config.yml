@@ -9,6 +9,7 @@ documents:
     - README.md
     # - docs/file1.md
     # - examples/file2.md
+    # - changes_log.md
 
 tests: tests
 source: src
