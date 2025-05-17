@@ -1,0 +1,19 @@
+feature-file: .fcoverage/feature-list.md
+report-file: .fcoverage/report.md
+prompts-directory: .fcoverage/prompts
+rag-save-location: .fcoverage/rag
+
+documents:
+    - doc1.txt
+    - doc2.txt
+
+tests: tests
+source: .
+
+
+llm-model: gemini-2.0-flash
+llm-model-provider: google_genai
+
+embedding-model: models/gemini-embedding-exp-03-07
+embedding-model-provider: google_genai  
+embedding-batch-size: 32

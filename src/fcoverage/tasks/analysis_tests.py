@@ -3,7 +3,7 @@ from .base import TasksBase
 from fcoverage.utils.llm import LLMWrapper
 
 
-class TestAnalysisTask(TasksBase):
+class AnalyseTestsTask(TasksBase):
 
     def __init__(self, args, config):
         super().__init__(args, config)

@@ -1,9 +1,10 @@
 # This file makes the 'tasks' directory a Python package.
-from .base import TasksBase
 from .feature_extraction import FeatureExtractionTask
-from .test_analysis import TestAnalysisTask
+from .analysis_tests import AnalyseTestsTask
+from .sourcecode_embedding import SourceCodeEmbeddingTask
 
 __all__ = [
     "FeatureExtractionTask",
-    "TestAnalysisTask",
+    "AnalyseTestsTask",
+    "SourceCodeEmbeddingTask",
 ]
