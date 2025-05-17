@@ -22,7 +22,7 @@ def test_process_python_file_main(args):
 
 
 def test_process_python_file_calc(args):
-    chunks = process_python_file(args["project"] + "/lib/calc.py")
+    chunks = process_python_file(args["project"] + "/utils/calc.py")
     assert len(chunks) == 3
 
     assert chunks[0]["function_name"] == "Calculator.subtract"
@@ -32,16 +32,16 @@ def test_process_python_file_calc(args):
         chunks[0]["path"]
         == chunks[1]["path"]
         == chunks[2]["path"]
-        == args["project"] + "/lib/calc.py"
+        == args["project"] + "/utils/calc.py"
     )
     assert (
         chunks[0]["qualified_name"]
-        == args["project"] + "/lib/calc.py:Calculator.subtract"
+        == args["project"] + "/utils/calc.py:Calculator.subtract"
     )
     assert (
         chunks[1]["qualified_name"]
-        == args["project"] + "/lib/calc.py:Calculator.multiply"
+        == args["project"] + "/utils/calc.py:Calculator.multiply"
     )
     assert (
-        chunks[2]["qualified_name"] == args["project"] + "/lib/calc.py:Calculator.add"
+        chunks[2]["qualified_name"] == args["project"] + "/utils/calc.py:Calculator.add"
     )

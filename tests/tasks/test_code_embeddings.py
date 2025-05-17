@@ -58,7 +58,7 @@ def create_initial_rag(
 def update_a_source_code_file(
     args, config, create_initial_rag, ensure_project_directory_is_clean
 ):
-    target_file = os.path.join(args["project"], config["source"], "lib/util.py")
+    target_file = os.path.join(args["project"], config["source"], "utils/util.py")
     try:
         # Create a dummy file to simulate the update
         with open(
