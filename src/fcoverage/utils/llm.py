@@ -36,6 +36,7 @@ class EmbeddingsWrapper:
         self.model_name = config.get("embedding-model", "microsoft/codebert-base")
         self.model_provider = config.get("embedding-model-provider", "offline")
         self.batch_size = config.get("embedding-batch-size", 32)
+        self.model = None
 
     def prepare(self):
         if self.model_provider == "offline":
@@ -49,7 +50,7 @@ class EmbeddingsWrapper:
     def init_model_online(self):
 
         self.model = init_embeddings(
-            model_name=self.model_name, model_provider=self.model_provider
+            model=self.model_name, provider=self.model_provider
         )
 
     def embed_batch(

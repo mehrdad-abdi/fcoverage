@@ -21,12 +21,16 @@ class SourceCodeEmbeddingTask(TasksBase):
         self.meta_data_path = os.path.join(
             self.args["project"], self.config["rag-save-location"], "metadata.json"
         )
+        self.faiss_index_path = os.path.join(
+            self.rag_save_location, "faiss_index.faiss"
+        )
         self.vectorstore = None
 
     def prepare(self):
         os.makedirs(self.rag_save_location, exist_ok=True)
         self.embeddings_wrapper = EmbeddingsWrapper(self.config)
-        if os.path.exists(os.path.join(self.rag_save_location, "faiss_index.faiss")):
+        self.embeddings_wrapper.prepare()
+        if os.path.exists(self.faiss_index_path):
             self.vectorstore = FAISS.load_local(
                 self.rag_save_location, self.embeddings_wrapper.model
             )
@@ -39,7 +43,7 @@ class SourceCodeEmbeddingTask(TasksBase):
         return True
 
     def build_chunks_for_python_source(self):
-        source_folder = os.path.join(self.args["project"], self.config["src"])
+        source_folder = os.path.join(self.args["project"], self.config["source"])
         file_path_list = get_all_python_files(source_folder)
         for file_path in file_path_list:
             chunks = process_python_file(file_path)
@@ -50,8 +54,8 @@ class SourceCodeEmbeddingTask(TasksBase):
                     "path": chunk["path"],
                     "defined_function": chunk["function_name"],
                     "qualified_name": chunk["qualified_name"],
-                    "chunk_type": chunk["type"],
-                    "chunk_name": chunk["name"],
+                    "chunk_type": "source_code",
+                    "chunk_name": chunk["function_name"],
                     "start_line": chunk["start_line"],
                     "end_line": chunk["end_line"],
                 }
@@ -60,7 +64,7 @@ class SourceCodeEmbeddingTask(TasksBase):
                 )
 
     def hash_chunk(self, text: str) -> str:
-        return hashlib.sha256(text.encode("utf-8")).hexdigest()
+        return hashlib.sha1(text.encode("utf-8")).hexdigest()
 
     def load_metadata(self):
         if os.path.exists(self.meta_data_path):
@@ -77,7 +81,7 @@ class SourceCodeEmbeddingTask(TasksBase):
         new_metadata = {}
         prev_metadata = self.load_metadata()
 
-        for hash_id, document in self.documents:
+        for hash_id, document in self.documents.items():
             if hash_id not in prev_metadata:
                 new_docs.append(document)
 
