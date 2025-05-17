@@ -132,3 +132,36 @@ def test_update_faiss(
     ), "Should delete only the old document"
     mock_vdb.save_local.assert_called_once()
     assert mock_vdb.save_local.call_args[0][0] == task.rag_save_location
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    "config",
+    [
+        {
+            "rag-save-location": ".fcoverage/rag",
+            "source": ".",
+            "embedding-model-provider": "offline",
+            "embedding-model": "sentence-transformers/all-MiniLM-L6-v2",
+        }
+    ],
+    ids=["all-MiniLM-L6-v2"],
+)
+def test_offline_embedding(args, config, ensure_project_directory_is_clean):
+    task = SourceCodeEmbeddingTask(args, config)
+    task.prepare()
+    result = task.run()
+
+    assert result is True
+
+    doc = task.vectorstore.similarity_search(
+        "How many processors do I have?", k=1, filter={"chunk_type": "source_code"}
+    )
+    assert len(doc) == 1
+    assert "os.cpu_count" in doc[0].page_content
+
+    doc = task.vectorstore.similarity_search(
+        "How can I use Calculator class?", k=1, filter={"chunk_type": "source_code"}
+    )
+    assert len(doc) == 1
+    assert "run_calculator" in doc[0].page_content
