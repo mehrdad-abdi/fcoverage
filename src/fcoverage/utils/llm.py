@@ -9,8 +9,8 @@ import torch
 
 class LLMWrapper:
     def __init__(self, config: dict):
-        self.model_name = config.get("llm-model", "gemini-2.0-flash")
-        self.model_provider = config.get("llm-model-provider", "google")
+        self.model_name = config.get("llm", {}).get("model", "gemini-2.0-flash")
+        self.model_provider = config.get("llm", {}).get("provider", "google-genai")
 
     def prepare(self, prompts: list):
         self.init_model()
@@ -33,9 +33,13 @@ class LLMWrapper:
 
 class EmbeddingsWrapper:
     def __init__(self, config: dict):
-        self.model_name = config.get("embedding-model", "microsoft/codebert-base")
-        self.model_provider = config.get("embedding-model-provider", "offline")
-        self.batch_size = config.get("embedding-batch-size", 32)
+        self.model_name = config.get("embedding", {}).get(
+            "model", "models/gemini-embedding-exp-03-07"
+        )
+        self.model_provider = config.get("embedding", {}).get(
+            "provider", "google_genai"
+        )
+        self.batch_size = config.get("embedding", {}).get("batch_size", 32)
         self.model = None
 
     def prepare(self):
@@ -67,7 +71,7 @@ class EmbeddingsWrapper:
 
 
 class HuggingFaceCodeEmbeddings(Embeddings):
-    def __init__(self, model_name: str = "microsoft/codebert-base"):
+    def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModel.from_pretrained(model_name)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
