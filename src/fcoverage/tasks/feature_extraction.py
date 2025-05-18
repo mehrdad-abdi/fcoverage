@@ -1,4 +1,6 @@
 import os
+
+from fcoverage.utils import prompts
 from .base import TasksBase
 from fcoverage.utils.llm import LLMWrapper
 from fcoverage.utils.http import get_github_repo_details
@@ -46,8 +48,11 @@ class FeatureExtractionTask(TasksBase):
             self.config["prompts-directory"],
             self.PROMPT_NAME,
         )
-        with open(filepath, "r") as file:
-            self.feature_extraction_prompt = file.read()
+        if not os.path.exists(filepath):
+            self.feature_extraction_prompt = prompts.get_prompt_for_feature_extraction()
+        else:
+            with open(filepath, "r") as file:
+                self.feature_extraction_prompt = file.read()
 
     def invoke_llm(self):
         project_name = "not available"

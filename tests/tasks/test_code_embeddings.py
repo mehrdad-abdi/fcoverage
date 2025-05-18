@@ -66,14 +66,19 @@ def update_a_source_code_file(
         ) as f:
             f.write("def new_function():\n    return 'new'\n")
         # Update exiting file: deletes a method and adds a new one
-        content = open(target_file).read().replace("def greet", "def greet_edited")
+        with open(target_file, "r") as f:
+            content = f.read()
+        content = content.replace("def greet", "def greet_edited")
         with open(target_file, "w") as f:
             f.write(content)
         yield
     finally:
         # Clean up the file after the test
         os.remove(os.path.join(args["project"], config["source"], "dummy_file.py"))
-        content = open(target_file).read().replace("def greet_edited", "def greet")
+        with open(target_file, "r") as f:
+            content = f.read()
+        # Revert the changes made to the file
+        content = content.replace("def greet_edited", "def greet")
         with open(target_file, "w") as f:
             f.write(content)
 
@@ -141,8 +146,10 @@ def test_update_faiss(
         {
             "rag-save-location": ".fcoverage/rag",
             "source": ".",
-            "embedding-model-provider": "offline",
-            "embedding-model": "sentence-transformers/all-MiniLM-L6-v2",
+            "embedding": {
+                "provider": "offline",
+                "model": "sentence-transformers/all-MiniLM-L6-v2",
+            },
         }
     ],
     ids=["all-MiniLM-L6-v2"],
