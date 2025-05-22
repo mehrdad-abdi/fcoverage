@@ -16,7 +16,9 @@ def get_all_python_files(source_dir: str) -> List[str]:
     return python_files
 
 
-def process_python_file(file_path: str) -> Tuple[List[Dict], Set[Tuple[str, str]]]:
+def build_chunks_from_python_file(
+    file_path: str,
+) -> Tuple[List[Dict], Set[Tuple[str, str]]]:
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             source_code = f.read()

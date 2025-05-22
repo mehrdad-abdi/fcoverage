@@ -1,7 +1,10 @@
 import json
 import os
 
-from fcoverage.utils.code.python_utils import get_all_python_files, process_python_file
+from fcoverage.utils.code.python_utils import (
+    get_all_python_files,
+    build_chunks_from_python_file,
+)
 from fcoverage.utils.llm import EmbeddingsWrapper
 from .base import TasksBase
 import hashlib
@@ -46,7 +49,7 @@ class SourceCodeEmbeddingTask(TasksBase):
         source_folder = os.path.join(self.args["project"], self.config["source"])
         file_path_list = get_all_python_files(source_folder)
         for file_path in file_path_list:
-            chunks = process_python_file(file_path)
+            chunks = build_chunks_from_python_file(file_path)
             for chunk in chunks:
                 hash_id = self.hash_chunk(chunk["code"])
                 metadata = {

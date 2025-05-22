@@ -38,7 +38,7 @@ def ensure_project_directory_is_clean(args, config):
 
 
 @pytest.fixture
-def create_initial_rag(
+def create_vector_db(
     args, config, mock_embedding, mock_faiss, ensure_project_directory_is_clean
 ):
     task = SourceCodeEmbeddingTask(args, config)
@@ -56,14 +56,13 @@ def create_initial_rag(
 
 @pytest.fixture
 def update_a_source_code_file(
-    args, config, create_initial_rag, ensure_project_directory_is_clean
+    args, config, create_vector_db, ensure_project_directory_is_clean
 ):
-    target_file = os.path.join(args["project"], config["source"], "utils/util.py")
+    target_file = os.path.join(args["project"], config["source"], "dummy/utils/util.py")
+    new_file = os.path.join(args["project"], config["source"], "dummy/dummy_file.py")
     try:
         # Create a dummy file to simulate the update
-        with open(
-            os.path.join(args["project"], config["source"], "dummy_file.py"), "w"
-        ) as f:
+        with open(new_file, "w") as f:
             f.write("def new_function():\n    return 'new'\n")
         # Update exiting file: deletes a method and adds a new one
         with open(target_file, "r") as f:
@@ -71,10 +70,10 @@ def update_a_source_code_file(
         content = content.replace("def greet", "def greet_edited")
         with open(target_file, "w") as f:
             f.write(content)
-        yield
+        yield target_file, new_file
     finally:
         # Clean up the file after the test
-        os.remove(os.path.join(args["project"], config["source"], "dummy_file.py"))
+        os.remove(new_file)
         with open(target_file, "r") as f:
             content = f.read()
         # Revert the changes made to the file
@@ -111,10 +110,11 @@ def test_update_faiss(
     config,
     mock_embedding,
     mock_faiss,
-    create_initial_rag,
+    create_vector_db,
     update_a_source_code_file,
     ensure_project_directory_is_clean,
 ):
+    updated_file, added_file = update_a_source_code_file
     mock_init, mock_embedding = mock_embedding
     # The fixtuer create_initial_rag should have already created the initial RAG
     # The fixture update_a_source_code_file should have updated the source code file
@@ -130,11 +130,11 @@ def test_update_faiss(
     mock_vdb.add_documents.assert_called_once()
     assert (
         len(mock_vdb.add_documents.call_args[0][0]) == 2
-    ), "Should add only the new document"
+    ), "Expects exactly 2 documents to be added"
     mock_vdb.delete.assert_called_once()
     assert (
         len(mock_vdb.delete.call_args[0][0]) == 1
-    ), "Should delete only the old document"
+    ), "Expects exactly 1 document to be deleted"
     mock_vdb.save_local.assert_called_once()
     assert mock_vdb.save_local.call_args[0][0] == task.rag_save_location
 
@@ -145,7 +145,7 @@ def test_update_faiss(
     [
         {
             "rag-save-location": ".fcoverage/rag",
-            "source": ".",
+            "source": "src",
             "embedding": {
                 "provider": "offline",
                 "model": "sentence-transformers/all-MiniLM-L6-v2",
