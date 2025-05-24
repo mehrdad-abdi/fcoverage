@@ -11,6 +11,7 @@ certifi==2025.4.26
 chardet==4.0.0
 charset-normalizer==3.4.2
 click==8.1.8
+coverage==7.8.0
 dataclasses-json==0.6.7
 distro==1.9.0
 ecdsa==0.14.1
@@ -86,6 +87,9 @@ pydantic-settings==2.9.1
 pydantic_core==2.33.2
 pyflakes==3.3.2
 pytest==8.3.5
+pytest-cov==6.1.1
+pytest-cover==3.0.0
+pytest-coverage==0.0
 python-dotenv==1.1.0
 python-jose==3.2.0
 PyYAML==6.0.2
