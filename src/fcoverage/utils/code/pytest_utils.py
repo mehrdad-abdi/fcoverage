@@ -20,8 +20,9 @@ def get_test_files(src_path: str):
 
 
 def list_available_fixtures(project_root, test_path, pythonpath: str = None):
+    test_path_relative = Path(test_path).relative_to(project_root)
     cmd_out = run_cmd(
-        "pytest --fixtures-per-test --fixtures -q " + test_path,
+        "pytest --fixtures-per-test --fixtures -q " + str(test_path_relative),
         project_root,
         pythonpath=pythonpath,
     )
@@ -45,8 +46,9 @@ def list_available_fixtures(project_root, test_path, pythonpath: str = None):
 
 
 def list_fixtures_used_in_test(project_root, test_path, pythonpath: str = None):
+    test_path_relative = Path(test_path).relative_to(project_root)
     cmd_out = run_cmd(
-        "pytest --setup-only -q --setup-show " + test_path,
+        "pytest --setup-only -q --setup-show " + str(test_path_relative),
         project_root,
         pythonpath=pythonpath,
     )
