@@ -5,7 +5,7 @@ import os
 from fcoverage.tasks import (
     FeatureExtractionTask,
     AnalyseTestsTask,
-    SourceCodeEmbeddingTask,
+    CodeAnalysisTask,
 )
 
 
@@ -28,7 +28,7 @@ def run_task(args, config):
     if args["task"] == "feature-extraction":
         task = FeatureExtractionTask(args=args, config=config)
     elif args["task"] == "code-analysis":
-        task = SourceCodeEmbeddingTask(args=args, config=config)
+        task = CodeAnalysisTask(args=args, config=config)
     elif args["task"] == "test-analysis":
         task = AnalyseTestsTask(args=args, config=config)
     task.prepare()

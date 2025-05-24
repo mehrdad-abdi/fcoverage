@@ -3,7 +3,7 @@ import os
 import shutil
 from unittest.mock import MagicMock, patch
 import pytest
-from fcoverage.tasks import SourceCodeEmbeddingTask
+from fcoverage.tasks import CodeAnalysisTask
 
 
 @pytest.fixture
@@ -20,9 +20,7 @@ def mock_embedding():
 
 @pytest.fixture
 def mock_faiss():
-    with patch(
-        "fcoverage.tasks.sourcecode_embedding.FAISS", autospec=True
-    ) as mock_faiss:
+    with patch("fcoverage.tasks.code_analysis.FAISS", autospec=True) as mock_faiss:
         # Set up the mock to return a mocked chat model
         yield mock_faiss
 
@@ -41,7 +39,7 @@ def ensure_project_directory_is_clean(args, config):
 def create_vector_db(
     args, config, mock_embedding, mock_faiss, ensure_project_directory_is_clean
 ):
-    task = SourceCodeEmbeddingTask(args, config)
+    task = CodeAnalysisTask(args, config)
     task.prepare()
     task.run()
     # Create a fake index file to simulate the initial RAG
@@ -87,12 +85,12 @@ def test_no_faiss(
 ):
     mock_init, mock_embedding = mock_embedding
 
-    task = SourceCodeEmbeddingTask(args, config)
+    task = CodeAnalysisTask(args, config)
     task.prepare()
     result = task.run()
 
     assert result is True
-    assert len(task.documents) == 8
+    assert len(task.documents) == 15
     mock_faiss.from_documents.assert_called_once()
     assert mock_faiss.from_documents.call_args[0][0] == list(task.documents.values())
     assert mock_faiss.from_documents.call_args[0][1] == mock_embedding
@@ -102,7 +100,7 @@ def test_no_faiss(
 
     with open(task.meta_data_path, "r") as f:
         metadata = json.load(f)
-        assert len(metadata) == 8
+        assert len(metadata) == 15
 
 
 def test_update_faiss(
@@ -119,12 +117,12 @@ def test_update_faiss(
     # The fixtuer create_initial_rag should have already created the initial RAG
     # The fixture update_a_source_code_file should have updated the source code file
     # We call the task again to update the RAG
-    task = SourceCodeEmbeddingTask(args, config)
+    task = CodeAnalysisTask(args, config)
     task.prepare()
     result = task.run()
 
     assert result is True
-    assert len(task.documents) == 9
+    assert len(task.documents) == 16
     mock_faiss.load_local.assert_called_once()
     mock_vdb = mock_faiss.load_local.return_value
     mock_vdb.add_documents.assert_called_once()
@@ -146,6 +144,7 @@ def test_update_faiss(
         {
             "rag-save-location": ".fcoverage/rag",
             "source": "src",
+            "tests": "tests",
             "embedding": {
                 "provider": "offline",
                 "model": "sentence-transformers/all-MiniLM-L6-v2",
@@ -155,7 +154,7 @@ def test_update_faiss(
     ids=["all-MiniLM-L6-v2"],
 )
 def test_offline_embedding(args, config, ensure_project_directory_is_clean):
-    task = SourceCodeEmbeddingTask(args, config)
+    task = CodeAnalysisTask(args, config)
     task.prepare()
     result = task.run()
 
