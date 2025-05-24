@@ -91,6 +91,30 @@ def test_no_faiss(
 
     assert result is True
     assert len(task.documents) == 15
+
+    test_chunks = [
+        doc
+        for doc in task.documents.values()
+        if doc.metadata["chunk_type"] == "test_code"
+    ]
+    code_chunks = [
+        doc
+        for doc in task.documents.values()
+        if doc.metadata["chunk_type"] == "source_code"
+    ]
+    assert all(
+        ["covers" in doc.metadata for doc in test_chunks]
+    ), "All test code chunks should have 'covers' metadata"
+    assert all(
+        ["fixture_requests" in doc.metadata for doc in test_chunks]
+    ), "All test code chunks should have 'fixture_requests' metadata"
+    assert all(
+        ["fixture_requested_by" in doc.metadata for doc in test_chunks]
+    ), "All test code chunks should have 'fixture_requested_by' metadata"
+    assert all(
+        ["covered_by" in doc.metadata for doc in code_chunks]
+    ), "All source code chunks should have 'covered_by' metadata"
+
     mock_faiss.from_documents.assert_called_once()
     assert mock_faiss.from_documents.call_args[0][0] == list(task.documents.values())
     assert mock_faiss.from_documents.call_args[0][1] == mock_embedding
