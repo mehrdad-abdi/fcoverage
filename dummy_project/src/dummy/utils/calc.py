@@ -1,4 +1,4 @@
-from lib.util import greet, add_numbers
+from dummy.utils.util import greet, add_numbers
 
 
 class Calculator:

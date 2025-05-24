@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import pytest
 from unittest.mock import patch
 import yaml
@@ -6,11 +7,10 @@ import yaml
 
 @pytest.fixture
 def args():
-    current_file_path = os.path.abspath(__file__)
-    current_file_directory = os.path.dirname(current_file_path)
+    root_folder = Path(__file__).resolve().parent.parent
 
     return {
-        "project": f"{current_file_directory}/dummy_project",
+        "project": f"{root_folder}/dummy_project",
         "github": "https://github.com/acme/dummy_project",
     }
 

@@ -1,6 +1,6 @@
 import os
-from lib.util import greet, add_numbers as do_sum
-from lib.calc import Calculator
+from dummy.utils.util import greet, add_numbers as do_sum
+from dummy.utils.calc import Calculator
 
 
 def run_greeting():
