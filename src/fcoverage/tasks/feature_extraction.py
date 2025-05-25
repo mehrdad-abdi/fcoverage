@@ -22,8 +22,8 @@ class FeatureExtractionTask(TasksBase):
 
     def prepare(self):
         self.load_documents()
-        self.load_feature_extraction_prompt()
-        self.llm.prepare(self.feature_extraction_prompt)
+        self.load_prompt(self.PROMPT_NAME)
+        self.llm.prepare([("user", self.feature_extraction_prompt)])
         if "github" in self.args:
             self.github_details = get_github_repo_details(self.args["github"])
 
@@ -39,14 +39,14 @@ class FeatureExtractionTask(TasksBase):
                 content = file.read()
                 self.documents.append((doc, content))
 
-    def load_feature_extraction_prompt(self):
+    def load_prompt(self, prompt_filename):
         """
         Load the feature extraction prompt from the config.
         """
         filepath = os.path.join(
             self.args["project"],
             self.config["prompts-directory"],
-            self.PROMPT_NAME,
+            prompt_filename,
         )
         if not os.path.exists(filepath):
             self.feature_extraction_prompt = prompts.get_prompt_for_feature_extraction()

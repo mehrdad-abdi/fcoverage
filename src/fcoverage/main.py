@@ -4,7 +4,7 @@ import argparse
 import os
 from fcoverage.tasks import (
     FeatureExtractionTask,
-    AnalyseTestsTask,
+    FeatureTestMappingTask,
     CodeAnalysisTask,
 )
 
@@ -30,7 +30,7 @@ def run_task(args, config):
     elif args["task"] == "code-analysis":
         task = CodeAnalysisTask(args=args, config=config)
     elif args["task"] == "test-analysis":
-        task = AnalyseTestsTask(args=args, config=config)
+        task = FeatureTestMappingTask(args=args, config=config)
     task.prepare()
     return task.run()
 

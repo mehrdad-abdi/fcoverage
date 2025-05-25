@@ -1,15 +1,10 @@
 from importlib.resources import files
 
 __all__ = [
-    "get_prompt_for_code_completion",
+    "read_prompt_file",
 ]
 
-
-def get_prompt_for_feature_extraction():
-    return _read_prompt_file("feature_extraction.txt")
-
-
-def _read_prompt_file(file_name: str) -> str:
+def read_prompt_file(file_name: str) -> str:
     """
     Reads a prompt file from the package's data directory.
     """

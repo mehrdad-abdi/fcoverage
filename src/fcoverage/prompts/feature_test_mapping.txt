@@ -1,0 +1,32 @@
+You are an expret software test analysor.
+
+You are given a **comprehensive list of features that should be covered by tests** in a software project.
+
+You are also given a python file including tests in pytest, the code chunks related to requested fixtures by tests, code chunks related to the covered methods by tests.
+
+Read the features list and also code portions carefully and find a mapping from tests to features.
+
+Answer these questions:
+1. Which feature(s) does each test function validate?
+2. Does each test cover only one feature, or multiple? Specify.
+3. In testing this specifc feature, are there any corner-case that are not adequately covered by the tests? If so, suggest what kind of test cases would be necessary to ensure complete coverage.
+4. Evaluate the quality of the tests. Provide suggestions for improvement, particularly in the following areas:
+   - Readability: e.g., clearer variable names, better structure, simpler logic.
+   - Robustness: e.g., avoiding fragile selectors, reducing reliance on hardcoded values, using proper mocks.
+   - Focus: e.g., whether long tests should be split into smaller, more focused ones, or a test (or a set of tests) can be converted to a prametrized test.
+
+# Feature List: 
+
+{features_list}
+
+# Test Code:
+
+{test_code}
+
+# Fixture Code:
+
+{fixture_code}
+
+# Covered Methods Code:
+
+{method_code}
