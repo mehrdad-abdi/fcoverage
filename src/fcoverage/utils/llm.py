@@ -1,16 +1,19 @@
-from typing import List, Optional
+from typing import List, Optional, Type
 from langchain.chat_models import init_chat_model
+from langchain.chat_models.base import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.embeddings.base import init_embeddings
 from langchain_core.embeddings import Embeddings
 from transformers import AutoModel, AutoTokenizer
 import torch
+from pydantic import BaseModel
 
 
 class LLMWrapper:
     def __init__(self, config: dict):
         self.model_name = config.get("llm", {}).get("model", "gemini-2.0-flash")
         self.model_provider = config.get("llm", {}).get("provider", "google-genai")
+        self.model : Optional[BaseChatModel] = None
 
     def prepare(self, prompts: list):
         self.init_model()
@@ -28,6 +31,25 @@ class LLMWrapper:
         prompt = self.prompt_template.invoke(params)
 
         response = self.model.invoke(prompt)
+        return response
+    
+    def structured_output(self, text: str, output_model: Type[BaseModel]) -> BaseModel:
+        convert_prompt = ChatPromptTemplate.from_template(
+            [
+                (
+                    "system",
+                    "You are an expert extraction algorithm. "
+                    "Only extract relevant information from the text. "
+                    "If you do not know the value of an attribute asked to extract, "
+                    "return null for the attribute's value.",
+                ),
+                ("human", "{text}"),
+            ]
+        )
+        
+        prompt = convert_prompt.invoke({"text": text})
+        structured_llm = self.model.with_structured_output(schema=output_model)
+        response = structured_llm.invoke(prompt)
         return response
 
 

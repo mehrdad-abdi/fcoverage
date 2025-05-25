@@ -4,6 +4,7 @@ __all__ = [
     "read_prompt_file",
 ]
 
+
 def read_prompt_file(file_name: str) -> str:
     """
     Reads a prompt file from the package's data directory.
