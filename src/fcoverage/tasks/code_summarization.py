@@ -9,7 +9,6 @@ class CodeSummarizationTask(TasksBase):
     def __init__(self, args, config):
         super().__init__(args, config)
         self.documents = []
-        
 
     def prepare(self):
         self.load_prompts()

@@ -8,7 +8,9 @@ from fcoverage.tasks import CodeAnalysisTask
 
 @pytest.fixture
 def mock_embedding():
-    with patch("fcoverage.tasks.code_analysis.init_embeddings", autospec=True) as mock_init:
+    with patch(
+        "fcoverage.tasks.code_analysis.init_embeddings", autospec=True
+    ) as mock_init:
         # Set up the mock to return a mocked chat model
         mock_embeddings = MagicMock()
         mock_init.return_value = mock_embeddings
