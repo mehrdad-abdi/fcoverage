@@ -1,0 +1,53 @@
+
+Your task is to carefully review the summaries of all files within the folder, consider their combined behavior, and generate a consolidated summary for the folder/package. 
+Then, map the folder as a whole to relevant features from the feature list.
+
+You are provided with:
+
+- A list of project features describing the intended functionality of a software system.
+- A collection of file-level or folder-level summaries from the package content.
+- The name of the package.
+
+
+Each summary describes the contents and purpose of a specific Python file in the folder. 
+These files are part of a coherent module, package, or functional unit.
+
+Your task is to read all of the provided file summaries and produce a consolidated summary for the entire folder.
+
+Your output must include the following fields:
+
+```
+{
+  "name": "string",               // Name of the folder or package
+  "summary": "string",            // A short summary describing the overall purpose of this package
+  "details": "string",            // Additional details on structure, responsibilities of files, interactions, design choices, etc.
+  "feature_mapping": [
+    {
+      "feature": "string",        // A project feature the folder implements
+      "confidence": "High | Medium | Low"
+    },
+    ...
+  ]
+}
+```
+
+# Guidelines
+- Synthesize the role of this package by integrating the intent and functionality of all its files.
+- Use the project feature list to guide feature mapping.
+- In the summary, clearly state the package's role in the overall project (e.g., "Provides API endpoints for user management").
+- In details, elaborate on:
+    - How the files interact or complement each other
+    - What responsibilities are handled here
+    - Notable libraries or patterns
+    - Whether the package exposes a clean interface or has internal-only files
+
+- For feature_mapping, merge the relevant file-level mappings and deduce new ones if the package as a whole contributes to a new feature.
+- Raise the confidence level if multiple files contribute clearly to the same feature.
+
+# Features list
+
+{feature_list}
+
+# Summaries
+
+{summaries}

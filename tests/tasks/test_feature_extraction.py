@@ -16,7 +16,7 @@ PROMPT_TEMPLATE = """blah blah blah
 
 @pytest.fixture
 def mock_llm():
-    with patch("fcoverage.utils.llm.init_chat_model", autospec=True) as mock_init:
+    with patch("fcoverage.tasks.feature_extraction.init_chat_model", autospec=True) as mock_init:
         # Set up the mock to return a mocked chat model
         mock_chat_model = MagicMock()
         mock_init.return_value = mock_chat_model

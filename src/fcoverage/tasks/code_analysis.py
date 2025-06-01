@@ -10,11 +10,11 @@ from fcoverage.utils.code.python_utils import (
     get_all_python_files,
     build_chunks_from_python_file,
 )
-from fcoverage.utils.llm import EmbeddingsWrapper
 from .base import TasksBase
 import hashlib
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
+from langchain.embeddings.base import init_embeddings
 
 
 class CodeAnalysisTask(TasksBase):
@@ -22,7 +22,14 @@ class CodeAnalysisTask(TasksBase):
     def __init__(self, args, config):
         super().__init__(args, config)
         self.documents = dict()
-        self.embeddings_wrapper = None
+        self.embeddings_model = None
+        self.conf_embedding_model = config.get("embedding", {}).get(
+            "model", "models/gemini-embedding-exp-03-07"
+        )
+        self.conf_embedding_provider = config.get("embedding", {}).get(
+            "provider", "google_genai"
+        )
+
         self.rag_save_location = os.path.join(
             self.args["project"], self.config["rag-save-location"]
         )
@@ -36,11 +43,13 @@ class CodeAnalysisTask(TasksBase):
 
     def prepare(self):
         os.makedirs(self.rag_save_location, exist_ok=True)
-        self.embeddings_wrapper = EmbeddingsWrapper(self.config)
-        self.embeddings_wrapper.prepare()
+        self.embeddings_model = init_embeddings(
+            model=self.conf_embedding_model,
+            provider=self.conf_embedding_provider,
+        )
         if os.path.exists(self.faiss_index_path):
             self.vectorstore = FAISS.load_local(
-                self.rag_save_location, self.embeddings_wrapper.model
+                self.rag_save_location, self.embeddings_model
             )
         else:
             self.vectorstore = None
@@ -201,9 +210,7 @@ class CodeAnalysisTask(TasksBase):
             if self.vectorstore:
                 self.vectorstore.add_documents(new_docs)
             else:
-                self.vectorstore = FAISS.from_documents(
-                    new_docs, self.embeddings_wrapper.model
-                )
+                self.vectorstore = FAISS.from_documents(new_docs, self.embeddings_model)
 
         # Save
         self.vectorstore.save_local(self.rag_save_location)

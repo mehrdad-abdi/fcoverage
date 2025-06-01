@@ -1,0 +1,93 @@
+You are given a Python code file from a software project along with a high-level list of project features that describe the intended functionality of the project. 
+Your task is to read the code carefully, understand its logic, structure, and purpose, then generate human-readable summaries, and finally find possible matches between the code and the described features.
+Your summaries should accurately reflect the actual implementation, even if it differs from the stated features.
+
+# Input:
+
+- A list of project features (natural language descriptions).
+- A complete Python source code file.
+
+# Your output must include the following sections:
+
+## 1. File-level Summary
+
+A clear and concise summary of the entire file. Include:
+
+- **summary**: A short description of the overall purpose of the code and the main functionalities. Keep it concise; detailed insights should go in the "notable_information" field.
+- **notable information**: Any other notable design decisions, patterns, or libraries used. If it's a module, mention the exported symbols.
+- **feature_mapping**: A set of possible relations to a listed project feature, with a level of confidence (high, medium, low).
+    - High: The code clearly implements this feature.
+    - Medium: The code partially aligns with the feature, or assumptions were required.
+    - Low: There is a weak or indirect match based on ambiguous cues.
+    - If no mapping can be found, leave this field empty.
+
+## 2. Component Summaries
+
+Generate a structured list of summaries for each significant component:
+
+- Functions
+- Classes, including a breakdown of their methods
+- (Optionally) constants or variables of importance
+
+For each component, provide:
+
+- **name**: name of the component.
+- **type**: whether it's a function/class/method/variable.
+- **summary**: A clear description of what it does.
+- **details**: Description of key logic, behaviors, or edge cases. For methods: how they relate to the enclosing class or other methods.
+- **feature_mapping**: List of matched features with associated confidence levels (High, Medium, Low). Leave this field empty if no relevant match is found.
+
+Example format:
+
+```json
+{
+  "file_summary": {
+    "summary": "Processes input in the format of CSV files for tasks such as extracting and normalizing user activity logs and sales information.",
+    "notable_information": "Uses pandas for data processing. Follows a modular structure with reusable components for parsing and normalization.",
+    "feature_mapping": [
+      {
+        "feature": "Supports CSV files",
+        "confidence": "High"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "process_data",
+      "type": "function",
+      "summary": "Processes input CSV files to extract and normalize user activity logs.",
+      "details": "Handles missing values and ensures consistent datetime formatting.",
+      "feature_mapping": [
+        {
+          "feature": "Normalize user activity data from CSV files",
+          "confidence": "High"
+        }
+      ]
+    },
+    {
+      "name": "DataNormalizer",
+      "type": "class",
+      "summary": "Encapsulates logic for standardizing user and sales data formats.",
+      "details": "Provides methods for field mapping, value cleaning, and timestamp adjustments.",
+      "feature_mapping": []
+    }
+  ]
+}
+```
+
+Guidelines:
+
+- Base all outputs strictly on the actual code, not assumptions.
+- Be concise and use professional technical language.
+- If possible, match features even if they are implemented across multiple functions or classes—note such cases.
+- Your goal is to help a developer understand what the code does and how it supports the intended project features.
+
+# Features list
+
+{feature_list}
+
+# File content
+
+Filename: {filename}
+
+{file_content}

@@ -1,6 +1,5 @@
 import os
 from .base import TasksBase
-from fcoverage.utils.llm import LLMWrapper
 
 
 class AnalyseTestsTask(TasksBase):
@@ -8,7 +7,6 @@ class AnalyseTestsTask(TasksBase):
     def __init__(self, args, config):
         super().__init__(args, config)
         self.documents = []
-        self.llm = LLMWrapper(args, config)
 
     def prepare(self):
         self.load_documents()
