@@ -1,3 +1,4 @@
+import json
 import sys
 import yaml
 import argparse
@@ -40,6 +41,8 @@ def main():
 
     config = load_config(args.project)
     print(yaml.dump(config, indent=2))
+    print(json.dumps(dict(os.environ), indent=2))
+
     if not run_task(vars(args), config):
         return 1
     return 0
