@@ -1,58 +1,72 @@
+from fcoverage.models.feature_list import FeatureItem, ProjectFeatureAnalysis
 from fcoverage.tasks import FeatureExtractionTask
 import pytest
 from unittest.mock import MagicMock, patch
 from langchain_core.prompt_values import HumanMessage, ChatPromptValue
 
-PROMPT_TEMPLATE = """blah blah blah
 
-**Project name:** {project_name}
-
-**Project description:** {project_description}
-
-**Documents:**
-
-{documents}"""
+@pytest.fixture
+def object_under_test(args, config):
+    return FeatureExtractionTask(args, config)
 
 
 @pytest.fixture
-def mock_llm():
-    with patch(
-        "fcoverage.tasks.feature_extraction.init_chat_model", autospec=True
-    ) as mock_init:
-        # Set up the mock to return a mocked chat model
-        mock_chat_model = MagicMock()
-        mock_init.return_value = mock_chat_model
-        mock_chat_model.invoke = MagicMock(return_value="Mocked LLM Response")
-        yield mock_init, mock_chat_model  # Provide both the mock function and the mock model to the test
-
-
-def test_ask_question(
-    args,
-    config,
-    mock_llm,
-    mock_requests_get_github,
-):
-    _, mock_chat_model = mock_llm
-
-    task = FeatureExtractionTask(args, config)
-    task.prepare()
-    response = task.invoke_llm()
-
-    expected_prompt = PROMPT_TEMPLATE.format(
-        project_name="dummy_project",
-        project_description="This your first repo!",
-        documents="doc1.txt\nContent of doc1\n\ndoc2.txt\nContent of doc2",
+def feature_item():
+    return FeatureItem(
+        name="csv support",
+        critical_to_user_experience=True,
+        description="Saves and Opens csv files",
+        is_unique=False,
+        is_likely_to_change=True,
+        priority="Medium",
+        edge_cases_to_test=None,
     )
 
-    assert response == "Mocked LLM Response"  # Verify the mocked return value
-    mock_chat_model.invoke.assert_called_once_with(
-        ChatPromptValue(
-            messages=[
-                HumanMessage(
-                    content=expected_prompt,
-                    additional_kwargs={},
-                    response_metadata={},
-                )
-            ]
-        )
+
+@pytest.fixture
+def features(feature_item):
+    return ProjectFeatureAnalysis(
+        project_name="Test Project",
+        project_description="Fake project description",
+        edge_case_notes=["Some edge items"],
+        expected_features=[
+            "Should work",
+            "Should terminate",
+        ],
+        main_goals=["Shows our project work", "It doesn't do more."],
+        similar_projects=["foo", "bar"],
+        features=[feature_item],
     )
+
+
+def test_markdown_creation(object_under_test, feature_item):
+    md_output = object_under_test.feature_item_to_markdown(18, feature_item)
+
+    assert (
+        md_output
+        == """### 18. csv support
+
+*Saves and Opens csv files*
+
+Testing priority for this feature: **Medium**
+
+[**critical** for user experience]  [likely to **evolve** frequently]
+
+
+"""
+    )
+
+
+def test_features_to_markdown(object_under_test, features: ProjectFeatureAnalysis):
+    md_output = object_under_test.features_to_markdown(features)
+
+    assert "Shows our project work" in md_output
+    assert "foo" in md_output
+    assert "bar" in md_output
+    assert "It doesn't do more." in md_output
+    assert "Some edge items" in md_output
+    assert "Fake project description" in md_output
+    assert "Test Project" in md_output
+    assert "Saves and Opens csv files" in md_output
+    assert "csv support" in md_output
+    assert "Medium" in md_output
