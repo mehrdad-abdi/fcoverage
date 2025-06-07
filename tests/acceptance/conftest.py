@@ -1,0 +1,53 @@
+import os
+import pytest
+import git
+import tempfile
+import shutil
+import pathlib
+
+
+@pytest.fixture(scope="session")
+def target_project():
+    return "https://github.com/mehrdad-abdi/youtube-dl"
+
+
+@pytest.fixture(scope="session")
+def example_config_path():
+    fcoverage_home = pathlib.Path(__file__).parent.parent.parent.resolve()
+    return os.path.join(fcoverage_home, "target-repository-files", "config-example.yml")
+
+
+@pytest.fixture(scope="session")
+def prepare_project(
+    llm_api_key, target_project, clone_project_path, example_config_path
+):
+    repo = git.Repo.clone_from(target_project, clone_project_path)
+    fcoverage_dir = os.path.join(clone_project_path, ".fcoverage")
+    os.mkdir(fcoverage_dir)
+    shutil.copyfile(example_config_path, os.path.join(fcoverage_dir, "config.yml"))
+
+    return repo
+
+
+@pytest.fixture(scope="session")
+def clone_project_path(llm_api_key, target_project):
+    with tempfile.TemporaryDirectory(prefix="fcoverage_target_repo_") as temp_dir:
+        yield temp_dir
+
+
+@pytest.fixture(scope="session")
+def artifacts_path(llm_api_key):
+    fcoverage_home = pathlib.Path(__file__).parent.parent.parent.resolve()
+    path = os.path.join(fcoverage_home, "test_artifacts")
+    if not os.path.exists(path):
+        os.mkdir(path)
+    return path
+
+
+@pytest.fixture(scope="session")
+def llm_api_key():
+    """I'm using google-genai because it provides free service for older models."""
+    api_key = os.environ.get("GOOGLE_GENAI_API_KEY", None)
+    if not api_key:
+        pytest.skip("Acceptance test ignored because no GOOGLE_GENAI_API_KEY found.")
+    return api_key

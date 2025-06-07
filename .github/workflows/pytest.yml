@@ -24,6 +24,13 @@ jobs:
     - name: Run pytest
       run: |
         pwd
+        env
         ls -la
         ls -la tests
-        pytest tests/
+        pytest -v tests/
+
+    - name: Archive e2e tests result files
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e_test_artifacts
+        path: test_artifacts/
