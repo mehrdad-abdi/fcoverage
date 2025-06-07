@@ -114,10 +114,15 @@ Testing priority for this feature: **{feature.priority}**
         similar_projects = "\n".join(
             f"{idx + 1}. {f}" for idx, f in enumerate(features.similar_projects)
         )
-        features_list = "\n\n".join(
-            self.feature_item_to_markdown(idx + 1, f)
-            for idx, f in enumerate(features.features)
-        )
+        features_list_items = []
+        for p in ["High", "Medium", "Low"]:
+            # sort High to Low
+            features_list_items.extend([
+                self.feature_item_to_markdown(idx + 1, f)
+                for idx, f in enumerate(features.features)
+                if f.priority == p
+            ])
+        features_list = "\n\n".join(features_list_items)
         edge_case_notes = ""
         if features.edge_case_notes:
             edge_case_notes_items = (
@@ -179,13 +184,13 @@ Testing priority for this feature: **{feature.priority}**
 
     def write_response_to_file(self, features):
         filename = os.path.join(self.args["project"], self.config["feature-file"])
-        filename_json = os.path.join(self.args["project"], "project-features.json")
+        filename_json = os.path.join(self.args["project"], ".fcoverage", "project-features.json")
         with open(filename_json, "w") as file:
             file.write(json.dumps(features.model_dump(mode="json"), indent=2))
+        print(f"Feature extraction results written to {filename_json}")
 
         with open(filename, "w") as file:
             file.write(self.features_to_markdown(features))
-
         print(f"Feature extraction results written to {filename}")
 
     def run(self):
