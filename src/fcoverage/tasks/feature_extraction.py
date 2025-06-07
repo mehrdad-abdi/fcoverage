@@ -20,15 +20,17 @@ class FeatureExtractionTask(TasksBase):
     def __init__(self, args, config):
         super().__init__(args, config)
         self.documents = []
-        self.model = init_chat_model(
-            config.get("llm", {}).get("model", "gemini-2.0-flash"),
-            model_provider=config.get("llm", {}).get("provider", "google-genai"),
-        )
+        self.model_name = config.get("llm", {}).get("model", "gemini-2.0-flash")
+        self.model_provider = config.get("llm", {}).get("provider", "google-genai")
         self.prompt_template = None
         self.project_name = "not available"
         self.project_description = "not available"
 
     def prepare(self):
+        self.model = init_chat_model(
+            self.model_name,
+            model_provider=self.model_provider,
+        )
         self.load_documents()
         self.load_feature_extraction_prompt()
         if "github" in self.args:
