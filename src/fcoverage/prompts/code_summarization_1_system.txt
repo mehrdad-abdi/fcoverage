@@ -37,5 +37,5 @@ For each component, provide:
 - **name**: name of the component.
 - **type**: whether it's a function/class/method/other.
 - **summary**: A clear description of what it does.
-- **details**: Description of key logic, behaviors, or edge cases. For methods: how they relate to the enclosing class or other methods.
+- **details**: Description of key logic, behaviors, or edge cases. For methods: how they relate to the enclosing class or other methods. 
 - **imports**: Any imports that relates this code to any other code within the project.

@@ -3,3 +3,8 @@ Your task is to find possible matches between the code and the described feature
 Assign a confidence level to them.
 Find the feature mapping in file-level and also for each component.
 If no mapping can be found, leave this field empty.
+
+Also assign these tags if relevant: 
+- `complex` if the code is complex, 
+- `important` if the code performs a key role in developing a feature
+- `external-dependency` if the code needs any external dependencies like databse, network, file system, ...

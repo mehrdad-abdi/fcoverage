@@ -1,9 +1,7 @@
 import json
 import os
 from pathlib import Path
-import coverage
 import subprocess
-from fcoverage.utils.code.python_utils import build_chunks_from_python_file
 
 
 def get_test_files(src_path: str):

@@ -1,5 +1,4 @@
 import os
-from unittest import mock
 from fcoverage.utils.code.python_utils import (
     build_chunks_from_python_file,
 )

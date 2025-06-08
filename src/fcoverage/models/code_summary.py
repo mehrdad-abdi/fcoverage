@@ -25,6 +25,9 @@ class ComponentSummary(BaseModel):
     features_mapping: Optional[List[FeatureMapping]] = Field(
         description="If you have been asked to map the component to project features, list related features here."
     )
+    tags: List[str] = Field(
+        description="Assign relevant tags like complex, important and external-dependency."
+    )
 
 
 class ModuleSummary(BaseModel):

@@ -55,13 +55,13 @@ def get_args():
     parser.add_argument(
         "--gitthub",
         type=str,
-        help=f"The GitHub address of the project.",
+        help="The GitHub address of the project.",
         required=False,
     )
     parser.add_argument(
         "--project",
         type=str,
-        help=f"Path to the main project directory.",
+        help="Path to the main project directory.",
         required=True,
     )
     parser.add_argument(

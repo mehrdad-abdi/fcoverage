@@ -1,7 +1,5 @@
 import pytest
 import os
-import shutil
-import subprocess
 from unittest.mock import patch
 
 import fcoverage

@@ -1,13 +1,12 @@
 import os
 from pathlib import Path
 
-from fcoverage.models.code_summary import ModuleSummary, ComponentSummary
+from fcoverage.models.code_summary import ModuleSummary
 from fcoverage.utils.code.python_utils import get_all_python_files
 from .base import TasksBase
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import START, StateGraph
 from langgraph.checkpoint.memory import MemorySaver
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from typing import Sequence
 
 from langchain_core.messages import BaseMessage
