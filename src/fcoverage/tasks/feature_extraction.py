@@ -2,9 +2,7 @@ import json
 import os
 
 from fcoverage.models.feature_list import FeatureItem, ProjectFeatureAnalysis
-from fcoverage.utils import prompts
 from .base import TasksBase
-from langchain.chat_models import init_chat_model
 from langchain_core.prompts import ChatPromptTemplate
 from fcoverage.utils.http import get_github_repo_details
 
@@ -20,17 +18,12 @@ class FeatureExtractionTask(TasksBase):
     def __init__(self, args, config):
         super().__init__(args, config)
         self.documents = []
-        self.model_name = config.get("llm", {}).get("model", "gemini-2.0-flash")
-        self.model_provider = config.get("llm", {}).get("provider", "google-genai")
         self.prompt_template = None
         self.project_name = "not available"
         self.project_description = "not available"
 
     def prepare(self):
-        self.model = init_chat_model(
-            self.model_name,
-            model_provider=self.model_provider,
-        )
+        self.load_llm_model()
         self.load_documents()
         self.load_feature_extraction_prompt()
         if "github" in self.args:
@@ -50,13 +43,7 @@ class FeatureExtractionTask(TasksBase):
                 self.documents.append((doc, content))
 
     def load_feature_extraction_prompt(self):
-        feature_extraction_prompt = prompts.get_prompt_for_feature_extraction(
-            os.path.join(
-                self.args["project"],
-                self.config["prompts-directory"],
-                self.PROMPT_NAME,
-            )
-        )
+        feature_extraction_prompt = self.load_prompt(self.PROMPT_NAME)
         self.prompt_template = ChatPromptTemplate.from_messages(
             messages=[("user", feature_extraction_prompt)]
         )

@@ -5,6 +5,8 @@ import tempfile
 import shutil
 import pathlib
 
+import yaml
+
 
 @pytest.fixture(scope="session")
 def target_project():
@@ -24,7 +26,14 @@ def prepare_project(
     repo = git.Repo.clone_from(target_project, clone_project_path)
     fcoverage_dir = os.path.join(clone_project_path, ".fcoverage")
     os.mkdir(fcoverage_dir)
-    shutil.copyfile(example_config_path, os.path.join(fcoverage_dir, "config.yml"))
+    config_file_path = os.path.join(fcoverage_dir, "config.yml")
+    shutil.copyfile(example_config_path, config_file_path)
+
+    with open(config_file_path, "r") as f:
+        config = yaml.safe_load(f)
+    config["source"] = "youtube_dl"
+    with open(config_file_path, "w") as f:
+        f.write(yaml.dump(config))
 
     return repo
 

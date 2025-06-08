@@ -1,0 +1,5 @@
+Now, you are given a high-level list of project features that describe the intended functionality of the project. 
+Your task is to find possible matches between the code and the described features.
+Assign a confidence level to them.
+Find the feature mapping in file-level and also for each component.
+If no mapping can be found, leave this field empty.
