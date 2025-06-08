@@ -52,7 +52,6 @@ class CodeSummarizationTask(TasksBase):
         return {"messages": response}
 
     def relate_to_features(self, state: State):
-        breakpoint()
         filename_json = os.path.join(self.args["project"], self.config["feature-file"])
         with open(filename_json, "r") as f:
             features_content = f.read()
@@ -96,12 +95,17 @@ File content:
         file_path_list = get_all_python_files(
             os.path.join(self.args["project"], self.config["source"])
         )
-        documents = []
+        self.documents = []
         for file_path in file_path_list:
             if self.args["only_file"] is not None:
                 if self.args["only_file"] != file_path:
                     continue
-            documents.append(self.run_summarize_by_single_file(file_path))
+            self.documents.append(self.run_summarize_by_single_file(file_path))
+
+    def persist_documents(self):
+        self.documents
 
     def run(self):
         self.run_summarize_by_modules()
+        self.persist_documents()
+        return True

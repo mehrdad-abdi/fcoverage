@@ -1,7 +1,7 @@
 # This is a sample configuration file for the target repository.
 
 feature-file: .fcoverage/feature-list.md
-rag-save-location: .fcoverage/rag
+vector-db-persist-location: .fcoverage/vdb
 report-file: .fcoverage/report.md
 prompts-directory: .fcoverage/prompts
 

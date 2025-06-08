@@ -29,12 +29,14 @@ def mock_faiss():
 
 @pytest.fixture
 def ensure_project_directory_is_clean(args, config):
-    rag_save_location = os.path.join(args["project"], config["rag-save-location"])
-    if os.path.exists(rag_save_location):
-        shutil.rmtree(rag_save_location)
+    vdb_save_location = os.path.join(
+        args["project"], config["vector-db-persist-location"]
+    )
+    if os.path.exists(vdb_save_location):
+        shutil.rmtree(vdb_save_location)
     yield
-    if os.path.exists(rag_save_location):
-        shutil.rmtree(rag_save_location)
+    if os.path.exists(vdb_save_location):
+        shutil.rmtree(vdb_save_location)
 
 
 @pytest.fixture
@@ -44,8 +46,8 @@ def create_vector_db(
     task = CodeAnalysisTask(args, config)
     task.prepare()
     task.run()
-    # Create a fake index file to simulate the initial RAG
-    os.makedirs(task.rag_save_location, exist_ok=True)
+    # Create a fake index file to simulate the initial Vector db
+    os.makedirs(task.vdb_save_location, exist_ok=True)
     with open(task.faiss_index_path, "w") as f:
         f.write("FAISS index data")
     yield
@@ -122,7 +124,7 @@ def test_no_faiss(
     assert mock_faiss.from_documents.call_args[0][1] == mock_embedding
     mock_vdb = mock_faiss.from_documents.return_value
     mock_vdb.save_local.assert_called_once()
-    assert mock_vdb.save_local.call_args[0][0] == task.rag_save_location
+    assert mock_vdb.save_local.call_args[0][0] == task.vdb_save_location
 
     with open(task.meta_data_path, "r") as f:
         metadata = json.load(f)
@@ -140,9 +142,9 @@ def test_update_faiss(
 ):
     updated_file, added_file = update_a_source_code_file
     mock_init, mock_embedding = mock_embedding
-    # The fixtuer create_initial_rag should have already created the initial RAG
+    # The fixtuer create_vector_db should have already created the initial vector database
     # The fixture update_a_source_code_file should have updated the source code file
-    # We call the task again to update the RAG
+    # We call the task again to update the vector database
     task = CodeAnalysisTask(args, config)
     task.prepare()
     result = task.run()
@@ -160,4 +162,4 @@ def test_update_faiss(
         len(mock_vdb.delete.call_args[0][0]) == 1
     ), "Expects exactly 1 document to be deleted"
     mock_vdb.save_local.assert_called_once()
-    assert mock_vdb.save_local.call_args[0][0] == task.rag_save_location
+    assert mock_vdb.save_local.call_args[0][0] == task.vdb_save_location
