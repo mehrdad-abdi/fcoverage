@@ -1,10 +1,12 @@
 import shutil
+import subprocess
 import pytest
 import os
 from unittest.mock import patch
 
 import fcoverage
 import fcoverage.main
+import chromadb
 
 
 @pytest.fixture
@@ -48,6 +50,11 @@ def add_a_feature_file(clone_project_path):
         )
 
 
+@pytest.fixture
+def mongo_collection_name():
+    return "code-summary"
+
+
 def test_summary_file(
     patch_main,
     prepare_project,
@@ -56,14 +63,32 @@ def test_summary_file(
     target_project,
     artifacts_path,
     python_file,
+    mongo_db_connection,
+    mongo_db_database,
+    mongo_collection_name,
+    mongo_db,
 ):
     assert os.path.exists(
-        os.path.join(clone_project_path, ".fcoverage", "feature-list.md")
+        os.path.join(clone_project_path, ".fcoverage", "vdb", "chroma.sqlite3")
     )
+    client = chromadb.PersistentClient(
+        os.path.join(clone_project_path, ".fcoverage", "vdb")
+    )
+    assert "fcoverage" in [c.name for c in client.list_collections()]
+    vdb_collection = client.get_collection("fcoverage")
+    assert vdb_collection.count() > 0
 
     # keep files as test artifacts
     shutil.copytree(
         os.path.join(clone_project_path, ".fcoverage", "vdb"),
         os.path.join(artifacts_path, "vdb"),
         dirs_exist_ok=True,
+    )
+
+    assert mongo_db[mongo_collection_name].count_documents({}) > 0
+    assert mongo_db[mongo_collection_name].count_documents({}) == vdb_collection.count()
+
+    subprocess.run(
+        f"mongodump --uri=\"{mongo_db_connection}\" --db={mongo_db_database} --collection={mongo_collection_name} --out={os.path.join(artifacts_path, 'mongodb')}",
+        shell=True,
     )

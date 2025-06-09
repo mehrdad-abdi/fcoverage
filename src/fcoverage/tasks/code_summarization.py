@@ -206,8 +206,6 @@ File content:
             "class_name": chunk["class_name"],
             "qualified_name": chunk["qualified_name"],
             "path": chunk["path"],
-            "start_line": chunk["start_line"],
-            "end_line": chunk["end_line"],
         }
 
     def models_to_documents(self, summaries):

@@ -98,6 +98,4 @@ class FunctionChunksExtractor(ast.NodeVisitor):
             "code": code_chunk,
             "hash": hash_text_content(code_chunk),
             "path": self.filename,
-            "start_line": node.lineno - 1,
-            "end_line": node.end_lineno if hasattr(node, "end_lineno") else None,
         }

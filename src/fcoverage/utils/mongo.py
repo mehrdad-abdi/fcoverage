@@ -24,8 +24,7 @@ class MongoDBHelper:
         return self.collection.find(query)
 
     def sync_documents(self, documents: List[Dict[str, Any]]):
-        current_ids = {d["id"] for d in documents}
-
+        current_ids = {d["_id"] for d in documents}
         # 1. Get all existing IDs from the DB
         existing_ids = self.ids()
 
@@ -40,5 +39,5 @@ class MongoDBHelper:
 
         # 4. Add new entries
         if ids_to_add:
-            docs_to_add = [doc for doc in documents if doc["id"] in ids_to_add]
+            docs_to_add = [doc for doc in documents if doc["_id"] in ids_to_add]
             self.add_documents(docs_to_add)

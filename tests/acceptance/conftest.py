@@ -4,7 +4,7 @@ import git
 import tempfile
 import shutil
 import pathlib
-
+from pymongo import MongoClient
 import yaml
 
 
@@ -20,8 +20,22 @@ def example_config_path():
 
 
 @pytest.fixture(scope="session")
+def mongo_db_connection():
+    return "mongodb://localhost:27017/"
+
+
+@pytest.fixture(scope="session")
+def mongo_db_database():
+    return "fcoverage-tests"
+
+
+@pytest.fixture(scope="session")
 def prepare_project(
-    llm_api_key, target_project, clone_project_path, example_config_path
+    llm_api_key,
+    target_project,
+    clone_project_path,
+    example_config_path,
+    mongo_db_database,
 ):
     repo = git.Repo.clone_from(target_project, clone_project_path)
     fcoverage_dir = os.path.join(clone_project_path, ".fcoverage")
@@ -37,6 +51,14 @@ def prepare_project(
         f.write(yaml.dump(config))
 
     return repo
+
+
+@pytest.fixture(scope="session")
+def mongo_db(prepare_project, mongo_db_connection, mongo_db_database):
+    client = MongoClient(mongo_db_connection)
+    db = client[mongo_db_database]
+    yield db
+    client.drop_database(mongo_db_database)
 
 
 @pytest.fixture(scope="session")

@@ -73,6 +73,14 @@ To provide intelligent, actionable insights that empower developers to build mor
     pip install fcoverage
     ```
 
+    Install mongodb (Mac OS version):
+    ```
+    brew tap mongodb/brew
+    brew install mongodb-community
+    brew install mongodb-database-tools
+    brew services start mongodb/brew/mongodb-community
+    ```
+
 2.  **Obtain LLM API Key and Configure:**
     * Sign up for an LLM service that provides a free tier (e.g., Google AI Studio for Gemini API key).
     * Generate an API key.

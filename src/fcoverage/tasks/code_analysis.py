@@ -63,8 +63,6 @@ class CodeAnalysisTask(TasksBase):
                     "qualified_name": chunk["qualified_name"],
                     "chunk_type": chunk_type,
                     "chunk_name": chunk["function_name"],
-                    "start_line": chunk["start_line"],
-                    "end_line": chunk["end_line"],
                 }
                 self.documents[hash_id] = Document(
                     page_content=chunk["code"], metadata=metadata
