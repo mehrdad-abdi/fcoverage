@@ -1,3 +1,4 @@
+import shutil
 import pytest
 import os
 from unittest.mock import patch
@@ -56,14 +57,9 @@ def test_summary_file(
     artifacts_path,
     python_file,
 ):
-    breakpoint()
-
-    # # keep files as test artifacts
-    # shutil.copyfile(
-    #     os.path.join(clone_project_path, ".fcoverage", "feature-list.md"),
-    #     os.path.join(artifacts_path, "feature-list.md"),
-    # )
-    # shutil.copyfile(
-    #     os.path.join(clone_project_path, ".fcoverage", "project-features.json"),
-    #     os.path.join(artifacts_path, "project-features.json"),
-    # )
+    # keep files as test artifacts
+    shutil.copytree(
+        os.path.join(clone_project_path, ".fcoverage", "vdb"),
+        os.path.join(artifacts_path, "vdb"),
+        dirs_exist_ok=True,
+    )

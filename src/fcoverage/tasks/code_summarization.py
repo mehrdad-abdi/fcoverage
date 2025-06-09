@@ -7,6 +7,7 @@ from fcoverage.utils.code.python_utils import (
     get_all_python_files,
     build_chunks_from_python_file,
     get_qualified_name,
+    hash_text_content,
 )
 from .base import TasksBase
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -27,6 +28,8 @@ class State(TypedDict):
 
 
 class CodeSummarizationTask(TasksBase):
+
+    CHUNK_TYPE = "code-summary"
 
     def __init__(self, args, config):
         super().__init__(args, config)
@@ -122,12 +125,12 @@ File content:
         for component in summary.components:
             model = component.model_dump()
             content = model["summary"]
-            model["chunk_type"] = "summary"
+            model["chunk_type"] = self.CHUNK_TYPE
             del model["summary"]
             documents.append(Document(page_content=content, metadata=model))
         model = summary.model_dump()
         del model["components"]
-        model["chunk_type"] = "summary"
+        model["chunk_type"] = self.CHUNK_TYPE
         model["type"] = "module"
         content = model["summary"]
         del model["summary"]

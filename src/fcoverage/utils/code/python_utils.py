@@ -71,10 +71,11 @@ class FunctionChunksExtractor(ast.NodeVisitor):
         else:
             _type = CodeType.FUNCTION
         self.keep(node, _type)
+        # stop visiting childs --> skip nested functions
 
     def visit_ClassDef(self, node):
         self.current_class = node.name
-        self.keep(node, node.name, CodeType.CLASS)
+        self.keep(node, CodeType.CLASS)
         self.generic_visit(node)
         self.current_class = None
 

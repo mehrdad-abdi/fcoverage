@@ -113,7 +113,7 @@ def test_summary_to_document(object_under_test, module_summary_item):
         assert "summary" not in doc.metadata
         assert "id" not in doc.metadata
         assert "type" in doc.metadata
-        assert doc.metadata["chunk_type"] == "summary"
+        assert doc.metadata["chunk_type"] == object_under_test.CHUNK_TYPE
     assert documents[-1].metadata["type"] == "module"
 
 
