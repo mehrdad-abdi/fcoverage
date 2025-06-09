@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 
@@ -10,8 +11,10 @@ from langgraph.checkpoint.memory import MemorySaver
 from typing import Sequence
 
 from langchain_core.messages import BaseMessage
+from langchain_core.documents import Document
 from langgraph.graph.message import add_messages
 from typing_extensions import Annotated, TypedDict
+from fcoverage.utils.vdb import VectorDBHelper
 
 
 class State(TypedDict):
@@ -23,7 +26,8 @@ class CodeSummarizationTask(TasksBase):
 
     def __init__(self, args, config):
         super().__init__(args, config)
-        self.documents = []
+        self.summaries = []
+        self.vectorstore = None
 
     def prepare(self):
         self.load_llm_model()
@@ -35,6 +39,12 @@ class CodeSummarizationTask(TasksBase):
             self.load_prompt("code_summarization_2_system.txt")
         )
         self.prepare_workflow_app()
+        self.vectorstore = VectorDBHelper(
+            self.vdb_save_location,
+            "fcoverage",
+            self.conf_embedding_model,
+            self.conf_embedding_provider,
+        )
 
     def prepare_workflow_app(self):
         self.workflow = StateGraph(state_schema=State)
@@ -95,15 +105,37 @@ File content:
         file_path_list = get_all_python_files(
             os.path.join(self.args["project"], self.config["source"])
         )
-        self.documents = []
+        self.summaries = []
         for file_path in file_path_list:
             if self.args["only_file"] is not None:
                 if self.args["only_file"] != file_path:
                     continue
-            self.documents.append(self.run_summarize_by_single_file(file_path))
+            self.summaries.append(self.run_summarize_by_single_file(file_path))
+
+    def summary_to_document(self, summary: ModuleSummary):
+        documents = []
+        # first process components
+        for component in summary["components"]:
+            model = component.model_dump()
+            content = model["summary"]
+            model["chunk_type"] = "summary"
+            del model["summary"]
+            documents.append(Document(page_content=content, metadata=model))
+        del summary["components"]
+        model = summary.model_dump()
+        model["chunk_type"] = "summary"
+        model["type"] = "module"
+        content = model["summary"]
+        del model["summary"]
+        documents.append(Document(page_content=content, metadata=model))
+        return documents
 
     def persist_documents(self):
-        self.documents
+        documents = []
+        for s in self.summaries:
+            documents.extend(self.summary_to_document(s))
+
+        self.vectorstore.sync_documents(documents)
 
     def run(self):
         self.run_summarize_by_modules()
