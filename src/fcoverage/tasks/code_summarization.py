@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from fcoverage.models.code_summary import ModuleSummary
+from fcoverage.models.code_summary import ComponentSummary, ModuleSummary
 from fcoverage.utils.code.python_utils import (
     CodeType,
     get_all_python_files,
@@ -9,6 +9,7 @@ from fcoverage.utils.code.python_utils import (
     get_qualified_name,
     hash_text_content,
 )
+from fcoverage.utils.mongo import MongoDBHelper
 from .base import TasksBase
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import START, StateGraph
@@ -33,9 +34,10 @@ class CodeSummarizationTask(TasksBase):
 
     def __init__(self, args, config):
         super().__init__(args, config)
-        self.summaries = dict()  # file_path -> (ModuleSummary, module_code_hash)
         self.vectorstore = None
-        self.documents = []
+        self.code_summary_db = None
+        self.docs_vectordb = []
+        self.docs_mongodb = []
         self.conf_embedding_model = config.get("embedding", {}).get(
             "model", "models/gemini-embedding-exp-03-07"
         )
@@ -61,6 +63,11 @@ class CodeSummarizationTask(TasksBase):
             "fcoverage",
             self.conf_embedding_model,
             self.conf_embedding_provider,
+        )
+        self.code_summary_db = MongoDBHelper(
+            self.config["mongo-db-connection-string"],
+            self.config["mongo-db-database"],
+            "code-summary",
         )
 
     def prepare_workflow_app(self):
@@ -119,6 +126,7 @@ File content:
         return output["summary"], hash_text_content(source_code)
 
     def run_summarize_by_modules(self):
+        summaries = dict()
         file_path_list = get_all_python_files(
             os.path.join(self.args["project"], self.config["source"])
         )
@@ -126,29 +134,34 @@ File content:
             if self.args["only_file"] is not None:
                 if self.args["only_file"] != file_path:
                     continue
-            self.summaries[file_path] = self.run_summarize_by_single_file(file_path)
+            summaries[file_path] = self.run_summarize_by_single_file(file_path)
+        return summaries
 
     def summary_to_document(self, summary: ModuleSummary):
         documents = []
-        # first process components
+        documents.append(
+            Document(
+                page_content=summary.summary,
+                metadata={
+                    "chunk_type": self.CHUNK_TYPE,
+                    "code_type": CodeType.MODULE,
+                },
+            )
+        )
         for component in summary.components:
-            model = component.model_dump()
-            content = model["summary"]
-            model["chunk_type"] = self.CHUNK_TYPE
-            del model["summary"]
-            documents.append(Document(page_content=content, metadata=model))
-        model = summary.model_dump()
-        del model["components"]
-        model["chunk_type"] = self.CHUNK_TYPE
-        model["type"] = "module"
-        content = model["summary"]
-        del model["summary"]
-        documents.append(Document(page_content=content, metadata=model))
+            documents.append(
+                Document(
+                    page_content=component.summary,
+                    metadata={
+                        "chunk_type": self.CHUNK_TYPE,
+                        "code_type": component.type,
+                        "name": component.name,
+                    },
+                )
+            )
         return documents
 
-    def get_chunk_qualified_name(self, doc, file_path):
-        object_name = doc.metadata["name"]
-        object_type = doc.metadata["type"]
+    def get_object_qualified_name(self, object_name, object_type, file_path):
         qualified_name = None
         if object_type == CodeType.CLASS_METHOD:
             class_name, method_name = object_name.split(":")
@@ -164,27 +177,72 @@ File content:
 
     def add_components_unique_ids(self, file_path, summaries, file_chunks):
         for doc in summaries:
-            qualified_name = self.get_chunk_qualified_name(doc, file_path)
+            qualified_name = self.get_object_qualified_name(
+                doc.metadata["name"], doc.metadata["code_type"], file_path
+            )
             chunk = file_chunks[qualified_name]
             doc.metadata["id"] = chunk["hash"]
 
-    def models_to_documents(self):
-        for file_path, summary_item in self.summaries.items():
-            summary, module_hash = summary_item
-            summaries = self.summary_to_document(summary)
+    def extra_information_module(self, summary: ModuleSummary, module_hash, file_path):
+        item = summary.model_dump(mode="json")
+        return {
+            "_id": module_hash,
+            "type": CodeType.MODULE,
+            "path": file_path,
+            "imports": item["imports"],
+            "exports": item["exports"],
+            "features_mapping": item["features_mapping"],
+        }
+
+    def extra_information_component(self, component: ComponentSummary, chunk):
+        item = component.model_dump(mode="json")
+        return {
+            "_id": chunk["hash"],
+            "imports": item["imports"],
+            "features_mapping": item["features_mapping"],
+            "tags": item["tags"],
+            "name": chunk["name"],
+            "type": chunk["type"],
+            "class_name": chunk["class_name"],
+            "qualified_name": chunk["qualified_name"],
+            "path": chunk["path"],
+            "start_line": chunk["start_line"],
+            "end_line": chunk["end_line"],
+        }
+
+    def models_to_documents(self, summaries):
+        for file_path, summary_item in summaries.items():
+            summary: ModuleSummary = summary_item[0]
+            module_hash: str = summary_item[1]
+
+            docs_chroma = self.summary_to_document(summary)
             file_chunks = build_chunks_from_python_file(file_path)
 
             # we need unique ids to track changes
             # If a code is not changed, it  will have its old id, hence we don't update it in vector db
-            # last item belongs to module document
-            summaries[-1].metadata["id"] = module_hash
+            # first item belongs to module document
+            docs_chroma[0].metadata["id"] = module_hash
             # adding id to components
-            self.add_components_unique_ids(file_path, summaries[:-1], file_chunks)
+            self.add_components_unique_ids(file_path, docs_chroma[1:], file_chunks)
 
-            self.documents.extend(summaries)
+            self.docs_mongodb.append(
+                self.extra_information_module(summary, module_hash, file_path)
+            )
+            for component in summary.components:
+                qualified_name = self.get_object_qualified_name(
+                    component.name, component.type, file_path
+                )
+                self.docs_mongodb.append(
+                    self.extra_information_component(
+                        component, file_chunks[qualified_name]
+                    )
+                )
+
+            self.docs_vectordb.extend(docs_chroma)
 
     def run(self):
-        self.run_summarize_by_modules()
-        self.models_to_documents()
-        self.vectorstore.sync_documents(self.documents)
+        summaries = self.run_summarize_by_modules()
+        self.models_to_documents(summaries)
+        self.vectorstore.sync_documents(self.docs_vectordb)
+        self.code_summary_db.sync_documents(self.docs_mongodb)
         return True

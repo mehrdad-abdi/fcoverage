@@ -28,10 +28,12 @@ class VectorDBHelper:
 
     def init_google_genai(self):
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
         self.embeddings = GoogleGenerativeAIEmbeddings(model=self.embedding_model)
 
     def init_embeddings_generic(self):
         from langchain.embeddings.base import init_embeddings
+
         self.embeddings = init_embeddings(
             model=self.embedding_model,
             provider=self.embedding_provider,

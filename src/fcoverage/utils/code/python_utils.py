@@ -6,6 +6,7 @@ from enum import Enum
 
 
 class CodeType(str, Enum):
+    MODULE: str = "module"
     FUNCTION: str = "function"
     CLASS: str = "class"
     CLASS_METHOD: str = "method"

@@ -1,7 +1,10 @@
 feature-file: .fcoverage/feature-list.md
 report-file: .fcoverage/report.md
 prompts-directory: .fcoverage/prompts
-rag-save-location: .fcoverage/rag
+vector-db-persist-location: .fcoverage/vdb
+
+mongo-db-connection-string: mongodb://localhost:27017/
+mongo-db-database: fcoverage-dummy
 
 documents:
     - doc1.txt
@@ -16,5 +19,4 @@ llm:
 
 embedding:
     model: models/gemini-embedding-exp-03-07
-    provider: google_genai  
-    batch-size: 32
+    provider: google_genai

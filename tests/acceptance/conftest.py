@@ -32,6 +32,7 @@ def prepare_project(
     with open(config_file_path, "r") as f:
         config = yaml.safe_load(f)
     config["source"] = "youtube_dl"
+    config["mongo-db-database"] = "fcoverage-tests"
     with open(config_file_path, "w") as f:
         f.write(yaml.dump(config))
 
