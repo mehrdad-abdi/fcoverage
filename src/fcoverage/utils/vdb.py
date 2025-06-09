@@ -2,7 +2,6 @@ import os
 from typing import List
 from langchain_community.vectorstores import Chroma
 from langchain.schema import Document
-from langchain.embeddings.base import init_embeddings
 
 
 class VectorDBHelper:
@@ -27,11 +26,23 @@ class VectorDBHelper:
             persist_directory=self.persist_directory,
         )
 
-    def init_embeddings(self):
+    def init_google_genai(self):
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+        self.embeddings = GoogleGenerativeAIEmbeddings(model=self.embedding_model)
+
+    def init_embeddings_generic(self):
+        from langchain.embeddings.base import init_embeddings
         self.embeddings = init_embeddings(
             model=self.embedding_model,
             provider=self.embedding_provider,
         )
+
+    def init_embeddings(self):
+        match self.embedding_provider:
+            case "google_genai":
+                self.init_google_genai()
+            case _:
+                self.init_embeddings_generic()
 
     def add_documents(self, documents: List[Document]):
         ids_ = [doc.metadata["id"] for doc in documents]

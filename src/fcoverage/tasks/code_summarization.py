@@ -36,6 +36,15 @@ class CodeSummarizationTask(TasksBase):
         self.summaries = dict()  # file_path -> (ModuleSummary, module_code_hash)
         self.vectorstore = None
         self.documents = []
+        self.conf_embedding_model = config.get("embedding", {}).get(
+            "model", "models/gemini-embedding-exp-03-07"
+        )
+        self.conf_embedding_provider = config.get("embedding", {}).get(
+            "provider", "google_genai"
+        )
+        self.vdb_save_location = os.path.join(
+            self.args["project"], self.config["vector-db-persist-location"]
+        )
 
     def prepare(self):
         self.load_llm_model()

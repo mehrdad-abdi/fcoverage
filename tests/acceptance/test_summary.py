@@ -57,6 +57,10 @@ def test_summary_file(
     artifacts_path,
     python_file,
 ):
+    assert os.path.exists(
+        os.path.join(clone_project_path, ".fcoverage", "feature-list.md")
+    )
+
     # keep files as test artifacts
     shutil.copytree(
         os.path.join(clone_project_path, ".fcoverage", "vdb"),
