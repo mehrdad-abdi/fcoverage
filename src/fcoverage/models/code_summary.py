@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Literal
 
+from fcoverage.utils.code.python_utils import CodeType
+
 
 class FeatureMapping(BaseModel):
     feature_name: str = Field(description="The exact name of the feature.")
@@ -10,10 +12,11 @@ class FeatureMapping(BaseModel):
 
 
 class ComponentSummary(BaseModel):
-    name: str = Field(description="name of the component.")
-    type: Literal["Function", "Class", "Class method", "Other"] = Field(
-        description="whether it's a function/class/method. If the component is not a function/class/method, but it's important to be noticed in the summary, use Other",
-        enum=["Function", "Class", "Class method", "Other"],
+    name: str = Field(
+        description="name of the component. If it's a class method use `class_name:method_name` format."
+    )
+    type: CodeType = Field(
+        description="whether it's a function/class/method.",
     )
     summary: str = Field(
         description="A clear description of what it does. Description of key logic, behaviors, or edge cases. For methods: how they relate to the enclosing class or other methods. Do not include unnecessary information.",

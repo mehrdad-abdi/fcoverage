@@ -1,9 +1,13 @@
-import json
 import os
 from pathlib import Path
 
 from fcoverage.models.code_summary import ModuleSummary
-from fcoverage.utils.code.python_utils import get_all_python_files
+from fcoverage.utils.code.python_utils import (
+    CodeType,
+    get_all_python_files,
+    build_chunks_from_python_file,
+    get_qualified_name,
+)
 from .base import TasksBase
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import START, StateGraph
@@ -26,8 +30,9 @@ class CodeSummarizationTask(TasksBase):
 
     def __init__(self, args, config):
         super().__init__(args, config)
-        self.summaries = []
+        self.summaries = dict()  # file_path -> (ModuleSummary, module_code_hash)
         self.vectorstore = None
+        self.documents = []
 
     def prepare(self):
         self.load_llm_model()
@@ -99,30 +104,29 @@ File content:
             ),
         ]
         output = self.workflow_app.invoke({"messages": input_messages}, config)
-        return output["summary"]
+        return output["summary"], hash_text_content(source_code)
 
     def run_summarize_by_modules(self):
         file_path_list = get_all_python_files(
             os.path.join(self.args["project"], self.config["source"])
         )
-        self.summaries = []
         for file_path in file_path_list:
             if self.args["only_file"] is not None:
                 if self.args["only_file"] != file_path:
                     continue
-            self.summaries.append(self.run_summarize_by_single_file(file_path))
+            self.summaries[file_path] = self.run_summarize_by_single_file(file_path)
 
     def summary_to_document(self, summary: ModuleSummary):
         documents = []
         # first process components
-        for component in summary["components"]:
+        for component in summary.components:
             model = component.model_dump()
             content = model["summary"]
             model["chunk_type"] = "summary"
             del model["summary"]
             documents.append(Document(page_content=content, metadata=model))
-        del summary["components"]
         model = summary.model_dump()
+        del model["components"]
         model["chunk_type"] = "summary"
         model["type"] = "module"
         content = model["summary"]
@@ -130,14 +134,45 @@ File content:
         documents.append(Document(page_content=content, metadata=model))
         return documents
 
-    def persist_documents(self):
-        documents = []
-        for s in self.summaries:
-            documents.extend(self.summary_to_document(s))
+    def get_chunk_qualified_name(self, doc, file_path):
+        object_name = doc.metadata["name"]
+        object_type = doc.metadata["type"]
+        qualified_name = None
+        if object_type == CodeType.CLASS_METHOD:
+            class_name, method_name = object_name.split(":")
+            qualified_name = get_qualified_name(
+                file_path, class_name, method_name, CodeType.CLASS_METHOD
+            )
+        else:
+            qualified_name = get_qualified_name(
+                file_path, None, object_name, object_type
+            )
 
-        self.vectorstore.sync_documents(documents)
+        return qualified_name
+
+    def add_components_unique_ids(self, file_path, summaries, file_chunks):
+        for doc in summaries:
+            qualified_name = self.get_chunk_qualified_name(doc, file_path)
+            chunk = file_chunks[qualified_name]
+            doc.metadata["id"] = chunk["hash"]
+
+    def models_to_documents(self):
+        for file_path, summary_item in self.summaries.items():
+            summary, module_hash = summary_item
+            summaries = self.summary_to_document(summary)
+            file_chunks = build_chunks_from_python_file(file_path)
+
+            # we need unique ids to track changes
+            # If a code is not changed, it  will have its old id, hence we don't update it in vector db
+            # last item belongs to module document
+            summaries[-1].metadata["id"] = module_hash
+            # adding id to components
+            self.add_components_unique_ids(file_path, summaries[:-1], file_chunks)
+
+            self.documents.extend(summaries)
 
     def run(self):
         self.run_summarize_by_modules()
-        self.persist_documents()
+        self.models_to_documents()
+        self.vectorstore.sync_documents(self.documents)
         return True
