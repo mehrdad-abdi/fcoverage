@@ -1,5 +1,4 @@
 import os
-import shutil
 
 import pytest
 from fcoverage.utils.code.pytest_utils import (

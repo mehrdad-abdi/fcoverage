@@ -1,3 +1,5 @@
+You are an expert software analyst.
+
 You are given a description of a software project.
 Your task is to carefully analyze the provided information and extract a **comprehensive list of features that should be covered by tests**.
 

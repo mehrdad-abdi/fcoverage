@@ -1,4 +1,3 @@
-import json
 import os
 
 from fcoverage.utils.code.pytest_utils import (
@@ -12,9 +11,8 @@ from fcoverage.utils.code.python_utils import (
 )
 from .base import TasksBase
 import hashlib
-from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
-from langchain.embeddings.base import init_embeddings
+from fcoverage.utils.vdb import VectorDBHelper
 
 
 class CodeAnalysisTask(TasksBase):
@@ -22,7 +20,6 @@ class CodeAnalysisTask(TasksBase):
     def __init__(self, args, config):
         super().__init__(args, config)
         self.documents = dict()
-        self.embeddings_model = None
         self.conf_embedding_model = config.get("embedding", {}).get(
             "model", "models/gemini-embedding-exp-03-07"
         )
@@ -30,29 +27,18 @@ class CodeAnalysisTask(TasksBase):
             "provider", "google_genai"
         )
 
-        self.rag_save_location = os.path.join(
-            self.args["project"], self.config["rag-save-location"]
-        )
-        self.meta_data_path = os.path.join(
-            self.args["project"], self.config["rag-save-location"], "metadata.json"
-        )
-        self.faiss_index_path = os.path.join(
-            self.rag_save_location, "faiss_index.faiss"
+        self.vdb_save_location = os.path.join(
+            self.args["project"], self.config["vector-db-persist-location"]
         )
         self.vectorstore = None
 
     def prepare(self):
-        os.makedirs(self.rag_save_location, exist_ok=True)
-        self.embeddings_model = init_embeddings(
-            model=self.conf_embedding_model,
-            provider=self.conf_embedding_provider,
+        self.vectorstore = VectorDBHelper(
+            self.vdb_save_location,
+            "fcoverage",
+            self.conf_embedding_model,
+            self.conf_embedding_provider,
         )
-        if os.path.exists(self.faiss_index_path):
-            self.vectorstore = FAISS.load_local(
-                self.rag_save_location, self.embeddings_model
-            )
-        else:
-            self.vectorstore = None
 
     def run(self):
         self.build_chunks(
@@ -62,7 +48,7 @@ class CodeAnalysisTask(TasksBase):
             os.path.join(self.args["project"], self.config["tests"]), "test_code"
         )
         self.add_pytest_metadata()
-        self.build_index()
+        self.vectorstore.sync_documents(self.documents)
         return True
 
     def build_chunks(self, source_folder, chunk_type):
@@ -74,12 +60,9 @@ class CodeAnalysisTask(TasksBase):
                 metadata = {
                     "id": hash_id,
                     "path": chunk["path"],
-                    "defined_function": chunk["function_name"],
                     "qualified_name": chunk["qualified_name"],
                     "chunk_type": chunk_type,
                     "chunk_name": chunk["function_name"],
-                    "start_line": chunk["start_line"],
-                    "end_line": chunk["end_line"],
                 }
                 self.documents[hash_id] = Document(
                     page_content=chunk["code"], metadata=metadata
@@ -176,43 +159,3 @@ class CodeAnalysisTask(TasksBase):
 
     def hash_chunk(self, text: str) -> str:
         return hashlib.sha1(text.encode("utf-8")).hexdigest()
-
-    def load_metadata(self):
-        if os.path.exists(self.meta_data_path):
-            with open(self.meta_data_path) as f:
-                return json.load(f)
-        return {}
-
-    def save_metadata(self, metadata: dict):
-        with open(self.meta_data_path, "w") as f:
-            json.dump(metadata, f, indent=2)
-
-    def build_index(self):
-        new_docs = []
-        new_metadata = {}
-        prev_metadata = self.load_metadata()
-
-        for hash_id, document in self.documents.items():
-            if hash_id not in prev_metadata:
-                new_docs.append(document)
-
-            # TODO compare the metadata. If the metadata is changed, we need to update the document
-
-            new_metadata[hash_id] = {"text": document.page_content, **document.metadata}
-
-        # Remove deleted hashes
-        removed_hashes = set(prev_metadata.keys()) - set(new_metadata.keys())
-        if self.vectorstore and removed_hashes:
-            self.vectorstore.delete(list(removed_hashes))
-
-        # Add new/updated
-        if new_docs:
-            if self.vectorstore:
-                self.vectorstore.add_documents(new_docs)
-            else:
-                self.vectorstore = FAISS.from_documents(new_docs, self.embeddings_model)
-
-        # Save
-        self.vectorstore.save_local(self.rag_save_location)
-        self.save_metadata(new_metadata)
-        print(f"Updated vectorstore: {len(new_metadata)} chunks tracked")

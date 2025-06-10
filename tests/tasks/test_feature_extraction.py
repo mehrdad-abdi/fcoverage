@@ -1,8 +1,6 @@
 from fcoverage.models.feature_list import FeatureItem, ProjectFeatureAnalysis
 from fcoverage.tasks import FeatureExtractionTask
 import pytest
-from unittest.mock import MagicMock, patch
-from langchain_core.prompt_values import HumanMessage, ChatPromptValue
 
 
 @pytest.fixture

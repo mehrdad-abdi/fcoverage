@@ -1,9 +1,7 @@
 import json
 import os
 from pathlib import Path
-import coverage
 import subprocess
-from fcoverage.utils.code.python_utils import build_chunks_from_python_file
 
 
 def get_test_files(src_path: str):
@@ -27,7 +25,11 @@ def list_available_fixtures(project_root, test_path, pythonpath: str = None):
         pythonpath=pythonpath,
     )
     fixtures = {}
-    lines = [line for line in cmd_out if "--" in line and "---" not in line]
+    lines = [
+        line
+        for line in cmd_out
+        if "--" in line and "---" not in line and not line.startswith(" ")
+    ]
     for line in lines:
         parts = line.split("--", 1)
 

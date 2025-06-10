@@ -1,33 +1,13 @@
 from importlib.resources import files
-import os
 
 __all__ = [
-    "get_prompt_for_feature_extraction",
-    "get_prompt_for_code_summarization_module",
-    "get_prompt_for_code_summarization_package",
+    "read_prompt_file",
 ]
 
 
-def get_prompt_for_feature_extraction(filepath: str | None = None):
-    return _read_prompt_file("feature_extraction.txt", filepath)
-
-
-def get_prompt_for_code_summarization_module(filepath: str | None = None):
-    return _read_prompt_file("code_summarization_module.txt", filepath)
-
-
-def get_prompt_for_code_summarization_package(filepath: str | None = None):
-    return _read_prompt_file("code_summarization_package.txt", filepath)
-
-
-def _read_prompt_file(default: str, filepath: str | None = None) -> str:
+def read_prompt_file(file_name: str) -> str:
     """
     Reads a prompt file from the package's data directory.
     """
-    if not filepath or not os.path.exists(filepath):
-        # TODO read from GitHub, or langChain, or huggingface
-        template = files("fcoverage.prompts").joinpath(default)
-        return template.read_text(encoding="utf-8")
-    else:
-        with open(filepath, "r") as file:
-            return file.read()
+    template = files("fcoverage.prompts").joinpath(file_name)
+    return template.read_text(encoding="utf-8")

@@ -1,10 +1,12 @@
 # This is a sample configuration file for the target repository.
 
 feature-file: .fcoverage/feature-list.md
-rag-save-location: .fcoverage/rag
+vector-db-persist-location: .fcoverage/vdb
 report-file: .fcoverage/report.md
 prompts-directory: .fcoverage/prompts
 
+mongo-db-connection-string: mongodb://localhost:27017/
+mongo-db-database: fcoverage
 
 documents:
     - README.md
@@ -25,4 +27,3 @@ embedding:
     model: models/gemini-embedding-exp-03-07
     provider: google_genai  # "offline" or use online models like openai, google_genai, anthropic
     # If online, don't forget to set the environment variable like `OPENAI_API_KEY` or `GOOGLE_API_KEY`
-    batch-size: 32

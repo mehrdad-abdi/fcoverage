@@ -7,8 +7,8 @@ from fcoverage.tasks import (
     FeatureExtractionTask,
     AnalyseTestsTask,
     CodeAnalysisTask,
+    CodeSummarizationTask,
 )
-
 
 DEFAULT_HOME = ".fcoverage"
 DEFAULT_CONFIG_PATH = f"{DEFAULT_HOME}/config.yml"
@@ -32,6 +32,8 @@ def run_task(args, config):
         task = CodeAnalysisTask(args=args, config=config)
     elif args["task"] == "test-analysis":
         task = AnalyseTestsTask(args=args, config=config)
+    elif args["task"] == "code-summary":
+        task = CodeSummarizationTask(args=args, config=config)
     task.prepare()
     return task.run()
 
@@ -53,20 +55,29 @@ def get_args():
     parser.add_argument(
         "--gitthub",
         type=str,
-        help=f"The GitHub address of the project.",
+        help="The GitHub address of the project.",
         required=False,
     )
     parser.add_argument(
         "--project",
         type=str,
-        help=f"Path to the main project directory.",
+        help="Path to the main project directory.",
         required=True,
     )
     parser.add_argument(
         "--task",
-        choices=["feature-extraction", "code-analysis", "test-analysis"],
+        choices=[
+            "feature-extraction",
+            "code-analysis",
+            "test-analysis",
+            "code-summary",
+        ],
         help="Task to run.",
         required=True,
+    )
+    parser.add_argument(
+        "--only-file",
+        help="Run the task only on this file.",
     )
     args = parser.parse_args()
     return args
