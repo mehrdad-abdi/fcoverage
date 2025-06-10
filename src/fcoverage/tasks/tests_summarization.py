@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from fcoverage.models.code_summary import ComponentSummary, ModuleSummary
+from fcoverage.models.tests_summary import TestFileSummary, TestMethodSummary
 from fcoverage.utils.code.python_utils import (
     CodeType,
     get_all_python_files,
@@ -25,12 +25,12 @@ from fcoverage.utils.vdb import VectorDBHelper
 
 class State(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
-    summary: ModuleSummary
+    summary: TestFileSummary
 
 
 class CodeSummarizationTask(TasksBase):
 
-    CHUNK_TYPE = "code-summary"
+    CHUNK_TYPE = "tests-summary"
 
     def __init__(self, args, config):
         super().__init__(args, config)
@@ -50,12 +50,12 @@ class CodeSummarizationTask(TasksBase):
 
     def prepare(self):
         self.load_llm_model()
-        self.structured_llm = self.model.with_structured_output(ModuleSummary)
+        self.structured_llm = self.model.with_structured_output(TestFileSummary)
         self.system_prompt_1 = SystemMessage(
-            self.load_prompt("code_summarization_1_system.txt")
+            self.load_prompt("tests_summarization_1_system.txt")
         )
         self.system_prompt_2 = SystemMessage(
-            self.load_prompt("code_summarization_2_system.txt")
+            self.load_prompt("tests_summarization_2_system.txt")
         )
         self.prepare_workflow_app()
         self.vectorstore = VectorDBHelper(
@@ -125,10 +125,10 @@ File content:
         output = self.workflow_app.invoke({"messages": input_messages}, config)
         return output["summary"], hash_text_content(source_code)
 
-    def run_summarize_by_modules(self):
+    def run_summarize_test_files(self):
         summaries = dict()
         file_path_list = get_all_python_files(
-            os.path.join(self.args["project"], self.config["source"])
+            os.path.join(self.args["project"], self.config["tests"])
         )
         for file_path in file_path_list:
             if self.args["only_file"] is not None:
@@ -137,7 +137,7 @@ File content:
             summaries[file_path] = self.run_summarize_by_single_file(file_path)
         return summaries
 
-    def summary_to_document(self, summary: ModuleSummary):
+    def summary_to_document(self, summary: TestFileSummary):
         documents = []
         documents.append(
             Document(
@@ -183,7 +183,9 @@ File content:
             chunk = file_chunks[qualified_name]
             doc.metadata["id"] = chunk["hash"]
 
-    def extra_information_module(self, summary: ModuleSummary, module_hash, file_path):
+    def extra_information_module(
+        self, summary: TestFileSummary, module_hash, file_path
+    ):
         item = summary.model_dump(mode="json")
         return {
             "_id": module_hash,
@@ -194,7 +196,7 @@ File content:
             "features_mapping": item["features_mapping"],
         }
 
-    def extra_information_component(self, component: ComponentSummary, chunk):
+    def extra_information_component(self, component: TestMethodSummary, chunk):
         item = component.model_dump(mode="json")
         return {
             "_id": chunk["hash"],
@@ -210,7 +212,7 @@ File content:
 
     def models_to_documents(self, summaries):
         for file_path, summary_item in summaries.items():
-            summary: ModuleSummary = summary_item[0]
+            summary: TestFileSummary = summary_item[0]
             module_hash: str = summary_item[1]
 
             docs_chroma = self.summary_to_document(summary)
@@ -239,7 +241,7 @@ File content:
             self.docs_vectordb.extend(docs_chroma)
 
     def run(self):
-        summaries = self.run_summarize_by_modules()
+        summaries = self.run_summarize_test_files()
         self.models_to_documents(summaries)
         self.vectorstore.sync_documents(self.docs_vectordb)
         self.code_summary_db.sync_documents(self.docs_mongodb)
