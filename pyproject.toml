@@ -15,6 +15,15 @@ license = { text = "MIT" }
 dependencies = [
     "pyyaml>=6.0",
     "requests>=2.25.1",
+    "pytest-coverage",
+    "langchain>=0.3.25",
+    "langchain-chroma>=0.2.4",
+    "langchain-google-genai>=2.1.5",
+    "langgraph>=0.4.8",
+    "langsmith>=0.3.45",
+    "pymongo>=4.13.0",
+    "GitPython>=3.1.44",
+
 ]
 
 [project.optional-dependencies]

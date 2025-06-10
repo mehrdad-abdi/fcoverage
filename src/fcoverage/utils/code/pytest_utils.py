@@ -25,7 +25,11 @@ def list_available_fixtures(project_root, test_path, pythonpath: str = None):
         pythonpath=pythonpath,
     )
     fixtures = {}
-    lines = [line for line in cmd_out if "--" in line and "---" not in line and not line.startswith(" ")]
+    lines = [
+        line
+        for line in cmd_out
+        if "--" in line and "---" not in line and not line.startswith(" ")
+    ]
     for line in lines:
         parts = line.split("--", 1)
 

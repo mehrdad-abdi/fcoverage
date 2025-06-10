@@ -49,7 +49,6 @@ class VectorDBHelper:
     def add_documents(self, documents: List[Document]):
         ids_ = [doc.metadata["id"] for doc in documents]
         self.vectorstore.add_documents(documents, ids=ids_)
-        self.vectorstore.persist()
 
     def search(self, query: str, k: int = 5) -> List[Document]:
         return self.vectorstore.similarity_search(query, k=k)
