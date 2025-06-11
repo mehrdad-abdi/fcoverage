@@ -33,6 +33,28 @@ class TestMethodSummary(BaseModel):
     )
 
 
+class TestUtilsSummary(BaseModel):
+    name: str = Field(
+        description="name of the component. If it's a class method use `class_name:method_name` format."
+    )
+    type: CodeType = Field(
+        description="whether it's a function/class/method.",
+    )
+    summary: str = Field(
+        description="A clear description of what it does. Description of key logic, behaviors, or edge cases. For methods: how they relate to the enclosing class or other methods. Do not include unnecessary information.",
+        max_length=500,
+    )
+    imports: List[str] = Field(
+        description="Any imports that relates this code to any other code."
+    )
+
+
+class TestUtilsFileSummary(BaseModel):
+    components: List[TestUtilsSummary] = Field(
+        description="Summary of each function/class/method/fixture."
+    )
+
+
 class TestFileSummary(BaseModel):
     summary: str = Field(
         description="A description of the overall purpose of the code and the main functionalities. Include any notable design decisions, patterns, or libraries used.",

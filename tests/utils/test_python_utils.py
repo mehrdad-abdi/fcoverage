@@ -7,7 +7,8 @@ from fcoverage.utils.code.python_utils import (
 
 def test_build_chunks_from_python_file_main(args, config):
     file_path = os.path.join(args["project"], config["source"], "dummy", "main.py")
-    chunks = build_chunks_from_python_file(file_path)
+    chunks, hash = build_chunks_from_python_file(file_path)
+    assert hash
     assert len(chunks) == 3
     assert f"{file_path}::run_greeting" in chunks
     assert f"{file_path}::run_addition" in chunks
@@ -24,8 +25,9 @@ def test_build_chunks_from_python_file_calc(args, config):
     file_path = os.path.join(
         args["project"], config["source"], "dummy", "utils", "calc.py"
     )
-    chunks = build_chunks_from_python_file(file_path)
+    chunks, hash = build_chunks_from_python_file(file_path)
 
+    assert hash
     assert len(chunks) == 4
     assert f"{file_path}:Calculator" in chunks
     assert f"{file_path}:Calculator:subtract" in chunks

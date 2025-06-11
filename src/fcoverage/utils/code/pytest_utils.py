@@ -2,19 +2,20 @@ import json
 import os
 from pathlib import Path
 import subprocess
+from itertools import chain
 
 
 def get_test_files(src_path: str):
     src_path = Path(src_path).resolve()
     test_files = set()
-    for path in src_path.rglob("test_*.py"):
+    util_files = set()
+    for path in chain(src_path.rglob("test_*.py"), src_path.rglob("*_test.py")):
         if path.is_file():
             test_files.add(str(path))
-    for path in src_path.rglob("*_test.py"):
-        if path.is_file():
-            test_files.add(str(path))
+        else:
+            util_files.add(str(path))
 
-    return list(test_files)
+    return list(test_files), list(util_files)
 
 
 def list_available_fixtures(project_root, test_path, pythonpath: str = None):
