@@ -63,7 +63,7 @@ class TasksBase:
         self.code_summary_db = MongoDBHelper(
             self.config["mongo-db-connection-string"],
             self.config["mongo-db-database"],
-            self.CHUNK_TYPE,
+            self.CHUNK_SOURCE,
         )
 
     def get_features_content(self):
