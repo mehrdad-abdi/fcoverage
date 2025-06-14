@@ -27,7 +27,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml', 'poetry.lock', 'pdm.lock') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml', 'poetry.lock', 'pdm.lock', 'requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-      
 
@@ -46,9 +46,13 @@ jobs:
           set -x
           env
           pytest -v tests/acceptance > result.log 2>&1
+          echo "result<<EOF" >> $GITHUB_ENV
+          cat result.log >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
           cat result.log
           mv result.log test_artifacts
           ls 
+          
 
       - name: Comment on PR with results
         if: always()
@@ -56,7 +60,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          COMMENT="**Acceptance Test Results:** [View Full Logs]($RUN_URL)\n\n\n```\n$(cat test_artifacts/result.log)\n```\n"
+          cat test_artifacts/result.log
+          COMMENT_CONTENT=$(cat <<EOF
+Acceptance Test Results: [View Full Logs]($RUN_URL)
+
+\`\`\`
+${{ env.result }}
+\`\`\`
+EOF
+)
 
           gh pr comment ${{ github.event.issue.number }} --body "$COMMENT"
 
