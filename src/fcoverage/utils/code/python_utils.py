@@ -1,7 +1,7 @@
 import ast
 import os
 import hashlib
-from typing import Dict, List, Set, Tuple
+from typing import Any, Dict, List, Tuple
 from enum import Enum
 
 
@@ -10,7 +10,6 @@ class CodeType(str, Enum):
     FUNCTION: str = "function"
     CLASS: str = "class"
     CLASS_METHOD: str = "method"
-    Other: str = "other"
 
 
 def hash_text_content(text: str) -> str:
@@ -32,15 +31,16 @@ def get_all_python_files(source_dir: str) -> List[str]:
 
 def build_chunks_from_python_file(
     file_path: str,
-) -> Tuple[List[Dict], Set[Tuple[str, str]]]:
+) -> Tuple[Dict[str, Any], str]:
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             source_code = f.read()
         tree = ast.parse(source_code)
+        hash = hash_text_content(source_code)
 
         extractor = FunctionChunksExtractor(file_path, source_code)
         extractor.visit(tree)
-        return extractor.chunks
+        return extractor.chunks, hash
     except Exception as e:
         print(f"Failed to process {file_path}: {e}")
         return [], []
