@@ -50,13 +50,15 @@ jobs:
           mv result.log test_artifacts
           ls 
       - name: Prepare PR Comment text
+        env:
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           import os
           with open("test_artifacts/result.log", "r") as f:
             result = f.read()
           text = "Acceptance Test Results: [View Full Logs]({run_url})\n\n```\n{result}\n```\n"
           text = text.format(
-            run_url=os.environ['PATH']
+            run_url=os.environ['RUN_URL'],
             result=result
           )
           with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
@@ -68,7 +70,6 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           gh pr comment ${{ github.event.issue.number }} --body "${{ env.COMMENT_CONTENT }}"
 
