@@ -52,8 +52,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          COMMENT="✅ **Test Results** for 'run tests':\n\n\`\`\`\n${{ env.result }}\n\`\`\`\n[🔗 View Full Logs]($RUN_URL)"
-          gh pr comment ${{ github.event.issue.number }} --body "$COMMENT"
+          gh pr comment ${{ github.event.issue.number }} --body-file - <<EOF
+✅ **Test Results** for 'run tests':
+
+\`\`\`
+${{ env.result }}
+\`\`\`
+
+[🔗 View Full Logs]($RUN_URL)
+EOF
 
       - name: upload artifacts
         uses: actions/upload-artifact@v4
