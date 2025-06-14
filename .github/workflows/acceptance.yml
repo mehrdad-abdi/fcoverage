@@ -38,6 +38,7 @@ jobs:
           set -x
           env
           pytest -v tests/acceptance > result.log 2>&1
+          cat result.log
           mv result.log test_artifacts
           ls 
 
@@ -47,7 +48,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          COMMENT="✅ **Acceptance Test Results:** [🔗 View Full Logs](\$RUN_URL)"
+          COMMENT="**Acceptance Test Results:** [View Full Logs]($RUN_URL)\n\n\n```\n$(cat result.log)\n```\n"
+
           gh pr comment ${{ github.event.issue.number }} --body "$COMMENT"
 
       - name: upload artifacts
