@@ -32,7 +32,7 @@ jobs:
       - name: Run pytest and capture results
         id: run_tests
         env:
-          GOOGLE_API_KEY= ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           set +e
           pytest tests/acceptance > result.log 2>&1
@@ -44,6 +44,7 @@ jobs:
           echo "..." >> $GITHUB_ENV
           tail -n 20 result.log >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+          ls 
 
       - name: Comment on PR with results
         if: always()
@@ -51,5 +52,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          COMMENT="✅ **Test Results** for 'run tests':\n\n\`\`\`\n${{ env.result }}\n\`\`\`\n[🔗 View Full Logs]($RUN_URL)"
-          gh pr comment ${{ github.event.issue.number }} --body "$COMMENT"
+          gh pr comment ${{ github.event.issue.number }} --body-file - <<EOF
+✅ **Test Results** for 'run tests':
+
+\`\`\`
+${{ env.result }}
+\`\`\`
+
+[🔗 View Full Logs]($RUN_URL)
+EOF
+
+      - name: upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: test_artifacts
+          retention-days: 7
