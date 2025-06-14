@@ -36,6 +36,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
           pip install -e .
+          pip freeze > test_artifacts/requirements.txt
 
       - name: Run pytest and capture results
         id: run_tests
@@ -54,16 +55,16 @@ jobs:
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           import os
+          run_url=os.environ['RUN_URL']
           with open("test_artifacts/result.log", "r") as f:
             result = f.read()
-          text = "Acceptance Test Results: [View Full Logs]({run_url})\n\n```\n{result}\n```\n"
-          text = text.format(
-            run_url=os.environ['RUN_URL'],
-            result=result
-          )
+          text = f"Acceptance Test Results: [View Full Logs]({run_url})"
+          text = text + "\n\n"
+          text = text + "```"
+          text = text + result
+          text = text + "```"
           with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
             fh.write(f"COMMENT_CONTENT={text}\n")
-        
         shell: python
 
       - name: Comment on PR with results
