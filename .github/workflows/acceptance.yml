@@ -61,11 +61,11 @@ jobs:
           run_url=os.environ['RUN_URL']
           with open("test_artifacts/result.log", "r") as f:
             result = f.read()
-          text = f"Acceptance Test Results: [View Full Logs]({run_url})"
-          text = text + "\n\n"
-          text = text + "```"
+          text = f"Acceptance Test Results: [View Full Logs]({run_url})\n"
+          text = text + "\n"
+          text = text + "```\n"
           text = text + result
-          text = text + "```"
+          text = text + "```\n"
           with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
             fh.write(f"COMMENT_CONTENT<<EOF\n{text}\nEOF\n")
         shell: python
