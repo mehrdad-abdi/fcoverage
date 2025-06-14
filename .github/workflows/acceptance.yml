@@ -65,7 +65,7 @@ jobs:
           text = text + result
           text = text + "```"
           with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
-            fh.write(f"COMMENT_CONTENT={text}\n")
+            fh.write(f"COMMENT_CONTENT<<EOF\n{text}\nEOF\n")
         shell: python
 
       - name: Comment on PR with results
