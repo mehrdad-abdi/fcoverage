@@ -35,14 +35,10 @@ jobs:
           LLM_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           set +e
+          set -x
           env
           pytest -v tests/acceptance > result.log 2>&1
-          echo "exit_code=$?" >> $GITHUB_OUTPUT
-          echo "Test results:"
-          cat result.log
-          echo "result<<EOF" >> $GITHUB_ENV
-          cat result.log >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          mv result.log test_artifacts
           ls 
 
       - name: Comment on PR with results
@@ -51,8 +47,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          echo -e "✅ **Test Results** for 'run tests':\n\n\`\`\`\n\${{ env.result }}\n\`\`\`\n[🔗 View Full Logs](\$RUN_URL)" > msg
-          export msg=$(cat msg) ; gh pr comment ${{ github.event.issue.number }} --body "$msg"
+          COMMENT="✅ **Acceptance Test Results:** [🔗 View Full Logs](\$RUN_URL)"
+          gh pr comment ${{ github.event.issue.number }} --body "$COMMENT"
 
       - name: upload artifacts
         uses: actions/upload-artifact@v4
