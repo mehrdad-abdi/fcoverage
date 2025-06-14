@@ -75,9 +75,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr comment ${{ github.event.issue.number }} --body <<EOF
+          gh pr comment ${{ github.event.issue.number }} --body "$(
+            cat <<EOF
 ${{ steps.prepare_comment.outputs.COMMENT_CONTENT }}
 EOF
+          )"
 
       - name: upload artifacts
         uses: actions/upload-artifact@v4
