@@ -53,20 +53,18 @@ jobs:
           mv result.log test_artifacts
           ls 
           
-
       - name: Comment on PR with results
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          cat test_artifacts/result.log
-          COMMENT_CONTENT=$(cat <<EOF
+          COMMENT=$(cat <<EOF
 Acceptance Test Results: [View Full Logs]($RUN_URL)
 
-\`\`\`
+```
 ${{ env.result }}
-\`\`\`
+```
 EOF
 )
 
