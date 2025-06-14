@@ -66,8 +66,8 @@ jobs:
           text = text + "```\n"
           text = text + result
           text = text + "```\n"
-          with open("comment.txt", 'w') as fh:
-            fh.write(text)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+            fh.write(f"COMMENT_CONTENT<<EOF\n{text}\nEOF\n")
         shell: python
 
       - name: Comment on PR with results
@@ -75,6 +75,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          printf "%s" "${{ steps.prepare_comment.outputs.COMMENT_CONTENT }}" > comment.txt
           gh pr comment ${{ github.event.pull_request.number }} --body-file comment.txt
 
       - name: upload artifacts
