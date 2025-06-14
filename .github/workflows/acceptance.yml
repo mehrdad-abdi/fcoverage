@@ -1,4 +1,4 @@
-name: Run Acceptance Tests based on PR Comment
+name: Acceptance Tests
 
 on:
   issue_comment:
