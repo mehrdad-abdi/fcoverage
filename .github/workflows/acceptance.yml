@@ -49,24 +49,28 @@ jobs:
           cat result.log
           mv result.log test_artifacts
           ls 
-          
+      - name: Prepare PR Comment text
+        run: |
+          import os
+          with open("test_artifacts/result.log", "r") as f:
+            result = f.read()
+          text = "Acceptance Test Results: [View Full Logs]({run_url})\n\n```\n{result}\n```\n"
+          text = text.format(
+            run_url=os.environ['PATH']
+            result=result
+          )
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+            fh.write(f"COMMENT_CONTENT={text}\n")
+        
+        shell: python
+
       - name: Comment on PR with results
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          RESULT_LOG_CONTENT=$(cat test_artifacts/result.log)
-          COMMENT_CONTENT=$(cat <<EOF
-Acceptance Test Results: [View Full Logs]($RUN_URL)
-
-\`\`\`
-${RESULT_LOG_CONTENT}
-\`\`\`
-EOF
-          )
-
-          gh pr comment ${{ github.event.issue.number }} --body "$COMMENT_CONTENT"          
+          gh pr comment ${{ github.event.issue.number }} --body "${{ env.COMMENT_CONTENT }}"
 
       - name: upload artifacts
         uses: actions/upload-artifact@v4
