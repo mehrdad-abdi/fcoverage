@@ -32,7 +32,7 @@ jobs:
       - name: Run pytest and capture results
         id: run_tests
         env:
-          GOOGLE_GENAI_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          LLM_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           set +e
           env
