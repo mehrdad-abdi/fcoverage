@@ -35,14 +35,13 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           set +e
-          pytest tests/acceptance > result.log 2>&1
+          env
+          pytest -v tests/acceptance > result.log 2>&1
           echo "exit_code=$?" >> $GITHUB_OUTPUT
           echo "Test results:"
-          tail -n 20 result.log
+          cat result.log
           echo "result<<EOF" >> $GITHUB_ENV
-          head -n 20 result.log >> $GITHUB_ENV
-          echo "..." >> $GITHUB_ENV
-          tail -n 20 result.log >> $GITHUB_ENV
+          cat result.log >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
           ls 
 
