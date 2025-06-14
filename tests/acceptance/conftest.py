@@ -79,7 +79,8 @@ def artifacts_path(llm_api_key):
 @pytest.fixture(scope="session")
 def llm_api_key():
     """I'm using google-genai because it provides free service for older models."""
-    api_key = os.environ.get("GOOGLE_GENAI_API_KEY", None)
+    api_key = os.environ.get("LLM_API_KEY", None)
     if not api_key:
-        pytest.skip("Acceptance test ignored because no GOOGLE_GENAI_API_KEY found.")
+        pytest.skip("Acceptance test ignored because no LLM_API_KEY found.")
+    os.environ["GOOGLE_API_KEY"] = api_key
     return api_key
