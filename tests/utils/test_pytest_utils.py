@@ -46,7 +46,7 @@ def clear_test_files(args, config):
 
 
 def test_run_test_and_collect_function_coverage(args, config, clear_test_files):
-    test_files = get_test_files(os.path.join(args["project"], config["tests"]))
+    test_files, utils = get_test_files(os.path.join(args["project"], config["tests"]))
     src_path = os.path.join(args["project"], config["source"])
     assert len(test_files) == 2
     test_greet = next(t for t in test_files if "test_greet" in t)
