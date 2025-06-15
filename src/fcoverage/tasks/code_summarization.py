@@ -128,16 +128,11 @@ File content:
 
     def models_to_documents(self, summaries: Dict[str, ModuleSummary]):
         for file_path, summary in summaries.items():
-            docs_chroma = self.summary_to_document(summary)
             file_chunks, module_hash = build_chunks_from_python_file(file_path)
 
-            # we need unique ids to track changes
-            # If a code is not changed, it  will have its old id, hence we don't update it in vector db
-            # first item belongs to module document
-            docs_chroma[0].metadata["id"] = module_hash
-            # adding id to components
-            self.add_components_unique_ids(file_path, docs_chroma[1:], file_chunks)
-
+            self.docs_vectordb.append(
+                self.module_summary_to_document(summary, module_hash)
+            )
             self.docs_mongodb.append(
                 self.extra_information_module(summary, module_hash, file_path)
             )
@@ -145,45 +140,34 @@ File content:
                 qualified_name = self.get_object_qualified_name(
                     component.name, component.type, file_path
                 )
+                chunk = file_chunks[qualified_name]
+                self.docs_vectordb.append(
+                    self.component_summary_to_document(component, chunk["hash"])
+                )
                 self.docs_mongodb.append(
-                    self.extra_information_component(
-                        component, file_chunks[qualified_name]
-                    )
+                    self.extra_information_component(component, chunk)
                 )
 
-            self.docs_vectordb.extend(docs_chroma)
-
-    def summary_to_document(self, summary: ModuleSummary):
-        documents = []
-        documents.append(
-            Document(
-                page_content=summary.summary,
-                metadata={
-                    "source": self.CHUNK_SOURCE,
-                    "code_type": CodeType.MODULE,
-                },
-            )
+    def module_summary_to_document(self, summary: ModuleSummary, hash: str):
+        return Document(
+            page_content=summary.summary,
+            metadata={
+                "source": self.CHUNK_SOURCE,
+                "code_type": CodeType.MODULE,
+                "id": hash,
+            },
         )
-        for component in summary.components:
-            documents.append(
-                Document(
-                    page_content=component.summary,
-                    metadata={
-                        "source": self.CHUNK_SOURCE,
-                        "code_type": component.type,
-                        "name": component.name,
-                    },
-                )
-            )
-        return documents
 
-    def add_components_unique_ids(self, file_path, summaries, file_chunks):
-        for doc in summaries:
-            qualified_name = self.get_object_qualified_name(
-                doc.metadata["name"], doc.metadata["code_type"], file_path
-            )
-            chunk = file_chunks[qualified_name]
-            doc.metadata["id"] = chunk["hash"]
+    def component_summary_to_document(self, component: ComponentSummary, hash: str):
+        return Document(
+            page_content=component.summary,
+            metadata={
+                "source": self.CHUNK_SOURCE,
+                "code_type": component.type,
+                "name": component.name,
+                "id": hash,
+            },
+        )
 
     def get_object_qualified_name(self, object_name, object_type, file_path):
         qualified_name = None

@@ -21,7 +21,9 @@ from typing import Dict, Sequence
 from langchain_core.messages import BaseMessage
 from langchain_core.documents import Document
 from langgraph.graph.message import add_messages
+from langchain_core.tools import tool
 from typing_extensions import Annotated, TypedDict
+from langchain.agents import create_react_agent, AgentExecutor
 
 
 class State(TypedDict):
@@ -35,51 +37,36 @@ PROMPT_FEATURE_MAP = "tests_summarization_2_system"
 PROMPT_TEST_UTILS = "test_utils_summarization"
 
 
-class TestsSummarizationTask(TasksBase):
+class TestUtilsSummarizationTask(TasksBase):
+    CHUNK_SOURCE = "test-utils-summary"
 
-    CHUNK_SOURCE = "tests-summary"
-    PROMPTS = [
-        PROMPT_TEST_SUMMARY,
-        PROMPT_FEATURE_MAP,
-        PROMPT_TEST_UTILS,
-    ]
-
-    def __init__(self, args, config):
+    def __init__(
+        self, args, config, model, vectorstore, code_summary_db, prompts, utils_list
+    ):
         super().__init__(args, config)
-        self.tests_list = []
-        self.utils_list = []
-
-    def prepare(self):
-        self.load_llm_model()
-        self.load_vectordb_helper()
-        self.load_mongodb_helper()
-        self.load_prompts()
-        self.tests_list, self.utils_list = get_test_files(
-            os.path.join(self.args["project"], self.config["tests"])
-        )
+        self.model = model
+        self.vectorstore = vectorstore
+        self.code_summary_db = code_summary_db
+        self.prompts = prompts
+        self.utils_list = utils_list
 
     def run(self):
-        self.run_utils()
-        self.run_tests()
-        return True
-
-    def run_utils(self):
         summaries = dict()
         for file_path in self.utils_list:
             if self.args["only_file"] is not None:
                 if self.args["only_file"] != file_path:
                     continue
-            summaries[file_path] = self.run_summarize_util_file(file_path)
-        docs_vectordb, docs_mongodb = self.util_models_to_documents(summaries)
+            summaries[file_path] = self.run_summarize_file(file_path)
+        docs_vectordb, docs_mongodb = self.models_to_documents(summaries)
         self.vectorstore.sync_documents(docs_vectordb)
         self.code_summary_db.sync_documents(docs_mongodb)
 
-    def run_summarize_util_file(self, file_path):
+    def run_summarize_file(self, file_path):
         with open(file_path, "r", encoding="utf-8") as f:
             source_code = f.read()
         filename = Path(file_path).relative_to(self.args["project"])
         input_messages = [
-            SystemMessage(self.load_prompt(PROMPT_TEST_UTILS)),
+            SystemMessage(self.prompts[PROMPT_TEST_UTILS]),
             HumanMessage(
                 """Filename: `{filename}`
 File content:
@@ -90,11 +77,10 @@ File content:
                 )
             ),
         ]
-
         structured_llm = self.model.with_structured_output(TestUtilsFileSummary)
         return structured_llm.invoke(input_messages)
 
-    def util_models_to_documents(self, summaries: Dict[str, TestUtilsFileSummary]):
+    def models_to_documents(self, summaries: Dict[str, TestUtilsFileSummary]):
         docs_chroma = []
         docs_mongo = []
 
@@ -102,19 +88,20 @@ File content:
             file_chunks, file_hash = build_chunks_from_python_file(file_path)
 
             for helper in summary.components:
+                qualified_name = self.get_object_qualified_name(
+                    helper.name, helper.type, file_path
+                )
+                chunk = file_chunks[qualified_name]
+
                 doc_vdb = Document(
                     page_content=helper.summary,
                     metadata={
                         "source": self.CHUNK_SOURCE,
                         "code_type": helper.type,
                         "name": helper.name,
+                        "id": chunk["hash"],
                     },
                 )
-                qualified_name = self.get_object_qualified_name(
-                    helper.name, helper.type, file_path
-                )
-                chunk = file_chunks[qualified_name]
-                doc_vdb.metadata["id"] = chunk["hash"]
 
                 item = helper.model_dump(mode="json")
                 doc_mongo = {
@@ -132,21 +119,33 @@ File content:
 
         return docs_chroma, docs_mongo
 
-    def run_tests(self):
-        tests_workflow_app = self.init_workflow_app_tests()
+
+class TestFilesSummarizationTask(TasksBase):
+    CHUNK_SOURCE = "test-files-summary"
+
+    def __init__(
+        self, args, config, model, vectorstore, code_summary_db, prompts, tests_list
+    ):
+        super().__init__(args, config)
+        self.model = model
+        self.vectorstore = vectorstore
+        self.code_summary_db = code_summary_db
+        self.prompts = prompts
+        self.tests_list = tests_list
+
+    def run(self):
+        workflow_app = self.init_workflow_app()
         summaries = dict()
         for file_path in self.tests_list:
             if self.args["only_file"] is not None:
                 if self.args["only_file"] != file_path:
                     continue
-            summaries[file_path] = self.run_summarize_test_file(
-                file_path, tests_workflow_app
-            )
+            summaries[file_path] = self.run_summarize_file(file_path, workflow_app)
         docs_vectordb, docs_mongodb = self.test_models_to_documents(summaries)
         self.vectorstore.sync_documents(docs_vectordb)
         self.code_summary_db.sync_documents(docs_mongodb)
 
-    def init_workflow_app_tests(self):
+    def init_workflow_app(self):
         self.workflow = StateGraph(state_schema=State)
         self.workflow.add_node("summarize_test_file", self.summarize_test_file)
         self.workflow.add_node("relate_to_features", self.relate_to_features)
@@ -158,7 +157,7 @@ File content:
         memory = MemorySaver()
         self.workflow_app = self.workflow.compile(checkpointer=memory)
 
-    def run_summarize_test_file(self, file_path, workflow_app):
+    def run_summarize_file(self, file_path, workflow_app):
         filename = Path(file_path).relative_to(self.args["project"])
         config = {"configurable": {"thread_id": filename}}
 
@@ -321,3 +320,36 @@ File content:
             "qualified_name": chunk["qualified_name"],
             "path": chunk["path"],
         }
+
+
+class TestsSummarizationTask(TasksBase):
+
+    CHUNK_SOURCE = "tests-summary"
+    PROMPTS = [
+        PROMPT_TEST_SUMMARY,
+        PROMPT_FEATURE_MAP,
+        PROMPT_TEST_UTILS,
+    ]
+
+    def __init__(self, args, config):
+        super().__init__(args, config)
+        self.tests_list = []
+        self.utils_list = []
+        self.utils_task = None
+        self.tests_task = None
+
+    def prepare(self):
+        self.load_llm_model()
+        self.load_vectordb_helper()
+        self.load_mongodb_helper()
+        self.load_prompts()
+        self.tests_list, self.utils_list = get_test_files(
+            os.path.join(self.args["project"], self.config["tests"])
+        )
+        self.utils_task = TestUtilsSummarizationTask()
+        self.tests_task = TestFilesSummarizationTask()
+
+    def run(self):
+        result1 = self.utils_task.run()
+        result2 = self.tests_task.run()
+        return result1 and result2
