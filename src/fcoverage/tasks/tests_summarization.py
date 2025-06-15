@@ -5,7 +5,6 @@ from fcoverage.models.tests_summary import (
     TestFileSummary,
     TestMethodSummary,
     TestUtilsFileSummary,
-    TestUtilsSummary,
 )
 from fcoverage.utils.code.pytest_utils import get_test_files
 from fcoverage.utils.code.python_utils import (
@@ -236,7 +235,7 @@ File content:
             self.add_components_unique_ids(file_path, docs_chroma[1:], file_chunks)
 
             self.docs_mongodb.append(
-                self.extra_information_module(summary, module_hash, file_path)
+                self.extra_information_module(summary, None, file_path)
             )
             for component in summary.components:
                 qualified_name = self.get_object_qualified_name(

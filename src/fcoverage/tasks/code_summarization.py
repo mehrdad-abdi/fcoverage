@@ -76,7 +76,7 @@ class CodeSummarizationTask(TasksBase):
 
         workflow.add_edge(START, "summarize_file")
         workflow.add_edge("summarize_file", "relate_to_features")
-        workflow.add_edge("summarize_file", END)
+        workflow.add_edge("relate_to_features", END)
 
         memory = MemorySaver()
         return workflow.compile(checkpointer=memory)
@@ -84,7 +84,7 @@ class CodeSummarizationTask(TasksBase):
     def run_summarize_by_single_file(self, file_path, workflow_app):
         # TODO run in parallel
         config = {"configurable": {"thread_id": file_path}}
-        output = workflow_app.invoke({"filename": file_path}, config)
+        output = workflow_app.invoke({"file_path": file_path}, config)
         return output["summary"]
 
     def summarize_file(self, state: State):
@@ -93,7 +93,7 @@ class CodeSummarizationTask(TasksBase):
             source_code = f.read()
 
         input_messages = [
-            SystemMessage(self.load_prompt(PROMPT_CODE_SUMMARY)),
+            SystemMessage(self.prompts[PROMPT_CODE_SUMMARY]),
             HumanMessage(
                 """Filename: `{filename}`
 File content:
@@ -112,7 +112,7 @@ File content:
         features_content = self.get_features_content()
 
         input_messages = state["messages"] + [
-            SystemMessage(self.prompts(PROMPT_FEATURE_MAP)),
+            SystemMessage(self.prompts[PROMPT_FEATURE_MAP]),
             HumanMessage(
                 """Features list: 
 ```
