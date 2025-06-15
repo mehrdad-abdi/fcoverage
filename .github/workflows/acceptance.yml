@@ -23,11 +23,21 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml', 'poetry.lock', 'pdm.lock', 'requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install pytest
           pip install -e .
+          mkdir test_artifacts
+          pip freeze > test_artifacts/requirements.txt
 
       - name: Run pytest and capture results
         id: run_tests
@@ -35,24 +45,38 @@ jobs:
           LLM_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           set +e
+          set -x
           env
           pytest -v tests/acceptance > result.log 2>&1
-          echo "exit_code=$?" >> $GITHUB_OUTPUT
-          echo "Test results:"
           cat result.log
-          echo "result<<EOF" >> $GITHUB_ENV
-          cat result.log >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          mv result.log test_artifacts
           ls 
+      
+      - name: Prepare PR Comment text
+        id: prepare_comment
+        env:
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          import os
+          run_url=os.environ['RUN_URL']
+          with open("test_artifacts/result.log", "r") as f:
+            result = f.read()
+          text = f"Acceptance Test Results: [View Full Logs]({run_url})\n"
+          text = text + "\n"
+          text = text + "```\n"
+          text = text + result
+          text = text + "```\n"
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+            fh.write(f"COMMENT_CONTENT<<EOF\n{text}\nEOF\n")
+        shell: python
 
       - name: Comment on PR with results
         if: always()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          echo -e "✅ **Test Results** for 'run tests':\n\n\`\`\`\n${{ env.result }}\n\`\`\`\n[🔗 View Full Logs]($RUN_URL)" > msg
-          export msg=$(cat msg) ; gh pr comment ${{ github.event.issue.number }} --body "$msg"
+          printf "%s" "${{ steps.prepare_comment.outputs.COMMENT_CONTENT }}" > comment.txt
+          gh pr comment ${{ github.event.pull_request.number }} --body-file comment.txt
 
       - name: upload artifacts
         uses: actions/upload-artifact@v4
