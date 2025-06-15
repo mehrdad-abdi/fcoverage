@@ -3,6 +3,9 @@ import os
 from pathlib import Path
 import subprocess
 from itertools import chain
+from fcoverage.utils.code.python_utils import (
+    build_chunks_from_python_file,
+)
 
 
 def get_test_files(src_path: str):
@@ -36,6 +39,8 @@ def list_available_fixtures(project_root, test_path, pythonpath: str = None):
 
         fixture_name = parts[0].strip()
         fixture_path, line_number = parts[1].strip().split(":", 1)
+        if fixture_path.startswith("..."):
+            continue
         is_in_project = os.path.abspath(
             os.path.join(project_root, fixture_path)
         ).startswith(project_root)
@@ -61,8 +66,29 @@ def list_fixtures_used_in_test(project_root, test_path, pythonpath: str = None):
     defined_fixtures = list_available_fixtures(
         project_root, test_path, pythonpath=pythonpath
     )
-    used_fixtures = {k: v for k, v in defined_fixtures.items() if k in fixtures}
-
+    used_fixtures = dict()
+    chunks = dict()
+    for k, v in defined_fixtures.items():
+        if k in fixtures:
+            if v["path"] not in chunks:
+                chunks[v["path"]] = build_chunks_from_python_file(
+                    os.path.join(project_root, v["path"])
+                )[0]
+            fixture_chunks = [
+                chunk for chunk in chunks[v["path"]].values() if chunk["name"] == k
+            ]
+            if len(fixture_chunks) == 0:
+                # this shouldn't happen. If happens, file a bug ticket!
+                continue
+            if len(fixture_chunks) > 1:
+                # In rare cases, the name of function and the name of class method can be equals.
+                fixture_chunks = [
+                    c
+                    for c in fixture_chunks
+                    if c["start_line"] <= v["line_number"] <= c["end_line"]
+                ]
+            chunk = fixture_chunks[0]
+            used_fixtures[k] = chunk
     return used_fixtures
 
 

@@ -2,10 +2,11 @@ import pytest
 from dummy.utils.calc import Calculator
 
 
-@pytest.fixture
-def calculator():
-    return Calculator()
+class TestCalculator:
 
+    @pytest.fixture
+    def calculator(self):
+        return Calculator()
 
-def test_greet(calculator):
-    assert calculator.add(1, 2) == 3
+    def test_greet(self, calculator):
+        assert calculator.add(1, 2) == 3

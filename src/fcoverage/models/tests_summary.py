@@ -57,17 +57,14 @@ class TestUtilsFileSummary(BaseModel):
 
 class TestFileSummary(BaseModel):
     summary: str = Field(
-        description="A description of the overall purpose of the code and the main functionalities. Include any notable design decisions, patterns, or libraries used.",
+        description="A description of the overall purpose of the code and the main functionalities.",
         max_length=500,
     )
     imports: List[str] = Field(
         description="Any imports that relates this code to any other code."
     )
-    exports: List[str] | None = Field(
-        description="If it's a module, mention the exported symbols."
-    )
-    components: List[TestMethodSummary] = Field(
-        description="Summary for each component in the file."
+    test_methods: List[TestMethodSummary] = Field(
+        description="Summary for each test method in the file."
     )
     features_mapping: Optional[List[FeatureMapping]] = Field(
         description="If you have been asked to map the file to project features, list related features here."

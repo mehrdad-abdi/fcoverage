@@ -9,7 +9,9 @@ from fcoverage.utils.code.pytest_utils import (
 
 
 def test_list_fixtures(args, config):
-    test_files = get_test_files(os.path.join(args["project"], config["tests"]))
+    test_files, util_files = get_test_files(
+        os.path.join(args["project"], config["tests"])
+    )
     src_path = os.path.join(args["project"], config["source"])
     assert len(test_files) == 2
     test_greet = next(t for t in test_files if "test_greet" in t)
@@ -21,18 +23,16 @@ def test_list_fixtures(args, config):
     assert "fixture_1" in fixtures
     assert "fixture_2" in fixtures
     assert "fixture_3" in fixtures
-    assert fixtures["fixture_1"]["path"] == "tests/conftest.py"
-    assert fixtures["fixture_2"]["path"] == "tests/conftest.py"
-    assert (
-        fixtures["fixture_3"]["path"] == "tests/test_greet.py"
-    ), "fixture precendence should be respected"
+    assert fixtures["fixture_1"]["path"].endswith("tests/conftest.py")
+    assert fixtures["fixture_2"]["path"].endswith("tests/conftest.py")
+    assert fixtures["fixture_3"]["path"].endswith("tests/test_greet.py")
 
     fixtures = list_fixtures_used_in_test(args["project"], test_calc, src_path)
     assert len(fixtures) == 2
     assert "calculator" in fixtures
     assert "fixture_1" in fixtures, "autouse fixtures should be listed"
-    assert fixtures["calculator"]["path"] == "tests/test_calc.py"
-    assert fixtures["fixture_1"]["path"] == "tests/conftest.py"
+    assert fixtures["calculator"]["path"].endswith("tests/test_calc.py")
+    assert fixtures["fixture_1"]["path"].endswith("tests/conftest.py")
 
 
 @pytest.fixture

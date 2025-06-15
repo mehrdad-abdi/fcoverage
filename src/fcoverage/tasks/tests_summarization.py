@@ -6,7 +6,11 @@ from fcoverage.models.tests_summary import (
     TestMethodSummary,
     TestUtilsFileSummary,
 )
-from fcoverage.utils.code.pytest_utils import get_test_files
+from fcoverage.utils.code.pytest_utils import (
+    get_test_files,
+    list_fixtures_used_in_test,
+    run_test_and_collect_function_coverage,
+)
 from fcoverage.utils.code.python_utils import (
     CodeType,
     build_chunks_from_python_file,
@@ -21,15 +25,7 @@ from typing import Dict, Sequence
 from langchain_core.messages import BaseMessage
 from langchain_core.documents import Document
 from langgraph.graph.message import add_messages
-from langchain_core.tools import tool
 from typing_extensions import Annotated, TypedDict
-from langchain.agents import create_react_agent, AgentExecutor
-
-
-class State(TypedDict):
-    messages: Annotated[Sequence[BaseMessage], add_messages]
-    summary: TestFileSummary
-    filepath: str
 
 
 PROMPT_TEST_SUMMARY = "tests_summarization_1_system"
@@ -120,6 +116,12 @@ File content:
         return docs_chroma, docs_mongo
 
 
+class State(TypedDict):
+    messages: Annotated[Sequence[BaseMessage], add_messages]
+    summary: TestFileSummary
+    file_path: str
+
+
 class TestFilesSummarizationTask(TasksBase):
     CHUNK_SOURCE = "test-files-summary"
 
@@ -132,70 +134,59 @@ class TestFilesSummarizationTask(TasksBase):
         self.code_summary_db = code_summary_db
         self.prompts = prompts
         self.tests_list = tests_list
+        self.workflow_app = self.init_workflow_app()
 
     def run(self):
-        workflow_app = self.init_workflow_app()
         summaries = dict()
+        fixtures = dict()
+        covered_functions = dict()
         for file_path in self.tests_list:
             if self.args["only_file"] is not None:
                 if self.args["only_file"] != file_path:
                     continue
-            summaries[file_path] = self.run_summarize_file(file_path, workflow_app)
-        docs_vectordb, docs_mongodb = self.test_models_to_documents(summaries)
+            summaries[file_path] = self.run_summarize_file(file_path)
+            fixtures[file_path] = list_fixtures_used_in_test(
+                self.args["project"], file_path, self.args["source"]
+            )
+            covered_functions[file_path] = run_test_and_collect_function_coverage(
+                self.args["project"], self.args["source"], file_path
+            )
+        docs_vectordb, docs_mongodb = self.models_to_documents(summaries)
         self.vectorstore.sync_documents(docs_vectordb)
         self.code_summary_db.sync_documents(docs_mongodb)
+        self.update_coverage()
 
     def init_workflow_app(self):
-        self.workflow = StateGraph(state_schema=State)
-        self.workflow.add_node("summarize_test_file", self.summarize_test_file)
-        self.workflow.add_node("relate_to_features", self.relate_to_features)
+        workflow = StateGraph(state_schema=State)
+        workflow.add_node("summarize_test_file", self.summarize_test_file)
+        workflow.add_node("relate_to_features", self.relate_to_features)
 
-        self.workflow.add_edge(START, "summarize_test_file")
-        self.workflow.add_edge("summarize_test_file", "relate_to_features")
-        self.workflow.add_edge("relate_to_features", END)
+        workflow.add_edge(START, "summarize_test_file")
+        workflow.add_edge("summarize_test_file", "relate_to_features")
+        workflow.add_edge("relate_to_features", END)
 
         memory = MemorySaver()
-        self.workflow_app = self.workflow.compile(checkpointer=memory)
+        self.workflow_app = workflow.compile(checkpointer=memory)
 
-    def run_summarize_file(self, file_path, workflow_app):
-        filename = Path(file_path).relative_to(self.args["project"])
-        config = {"configurable": {"thread_id": filename}}
-
-        output = workflow_app.invoke({"filename": filename}, config)
+    def run_summarize_file(self, file_path):
+        config = {"configurable": {"thread_id": file_path}}
+        output = self.workflow_app.invoke({"filename": file_path}, config)
         return output["summary"]
 
     def summarize_test_file(self, state: State):
-        with open(state["filename"], "r", encoding="utf-8") as f:
+        filename = Path(state["file_path"]).relative_to(self.args["project"])
+        with open(state["file_path"], "r", encoding="utf-8") as f:
             source_code = f.read()
 
         input_messages = [
-            SystemMessage(self.load_prompt(PROMPT_TEST_SUMMARY)),
+            SystemMessage(self.prompts[PROMPT_TEST_SUMMARY]),
             HumanMessage(
                 """Filename: `{filename}`
 File content:
 ```python
 {file_content}
 ```""".format(
-                    filename=str(state["filename"]), file_content=source_code
-                )
-            ),
-        ]
-        response = self.model.invoke(input_messages)
-        return {"messages": response}
-
-    def summarize_util_file(self, state: State):
-        with open(state["filename"], "r", encoding="utf-8") as f:
-            source_code = f.read()
-
-        input_messages = [
-            SystemMessage(self.load_prompt(PROMPT_TEST_SUMMARY)),
-            HumanMessage(
-                """Filename: `{filename}`
-File content:
-```python
-{file_content}
-```""".format(
-                    filename=str(state["filename"]), file_content=source_code
+                    filename=filename, file_content=source_code
                 )
             ),
         ]
@@ -207,7 +198,7 @@ File content:
         features_content = self.get_features_content()
 
         input_messages = state["messages"] + [
-            SystemMessage(self.prompts(PROMPT_FEATURE_MAP)),
+            SystemMessage(self.prompts[PROMPT_FEATURE_MAP]),
             HumanMessage(
                 """Features list: 
 ```
@@ -223,54 +214,51 @@ File content:
 
     def models_to_documents(self, summaries: Dict[str, TestFileSummary]):
         for file_path, summary in summaries.items():
-            docs_chroma = self.summary_to_document(summary)
-            file_chunks, file_hash = build_chunks_from_python_file(file_path)
+            file_chunks, module_hash = build_chunks_from_python_file(file_path)
+            fixtures = list_fixtures_used_in_test(
+                self.args["project"], file_path, self.args["source"]
+            )
 
-            # we need unique ids to track changes
-            # If a code is not changed, it  will have its old id, hence we don't update it in vector db
-            # first item belongs to module document
-            docs_chroma[0].metadata["id"] = file_hash
-            # adding id to components
-            self.add_components_unique_ids(file_path, docs_chroma[1:], file_chunks)
-
+            self.docs_vectordb.append(
+                self.test_file_summary_to_document(summary, module_hash)
+            )
             self.docs_mongodb.append(
-                self.extra_information_module(summary, None, file_path)
+                self.extra_information_test_files(
+                    summary, module_hash, file_path, fixtures
+                )
             )
             for component in summary.components:
                 qualified_name = self.get_object_qualified_name(
                     component.name, component.type, file_path
                 )
+                chunk = file_chunks[qualified_name]
+                self.docs_vectordb.append(
+                    self.test_method_summary_to_document(component, chunk["hash"])
+                )
                 self.docs_mongodb.append(
-                    self.extra_information_component(
-                        component, file_chunks[qualified_name]
-                    )
+                    self.extra_information_test_method(component, chunk)
                 )
 
-            self.docs_vectordb.extend(docs_chroma)
-
-    def summary_to_document(self, summary: TestFileSummary):
-        documents = []
-        documents.append(
-            Document(
-                page_content=summary.summary,
-                metadata={
-                    "chunk_type": self.CHUNK_SOURCE,
-                    "code_type": CodeType.TEST_FILE,
-                },
-            )
+    def test_file_summary_to_document(self, summary: TestFileSummary, hash: str):
+        return Document(
+            page_content=summary.summary,
+            metadata={
+                "source": self.CHUNK_SOURCE,
+                "code_type": CodeType.MODULE,
+                "id": hash,
+            },
         )
-        for component in summary.components:
-            documents.append(
-                Document(
-                    page_content=component.summary,
-                    metadata={
-                        "chunk_type": self.CHUNK_SOURCE,
-                        "code_type": component.type,
-                        "name": component.name,
-                    },
-                )
-            )
-        return documents
+
+    def test_method_summary_to_document(self, component: TestMethodSummary, hash: str):
+        return Document(
+            page_content=component.summary,
+            metadata={
+                "source": self.CHUNK_SOURCE,
+                "code_type": component.type,
+                "name": component.name,
+                "id": hash,
+            },
+        )
 
     def get_object_qualified_name(self, object_name, object_type, file_path):
         qualified_name = None
@@ -286,18 +274,19 @@ File content:
 
         return qualified_name
 
-    def add_components_unique_ids(self, file_path, summaries, file_chunks):
-        for doc in summaries:
-            qualified_name = self.get_object_qualified_name(
-                doc.metadata["name"], doc.metadata["code_type"], file_path
-            )
-            chunk = file_chunks[qualified_name]
-            doc.metadata["id"] = chunk["hash"]
-
-    def extra_information_module(
-        self, summary: TestFileSummary, module_hash, file_path
+    def extra_information_test_files(
+        self, summary: TestFileSummary, module_hash, file_path, fixtures
     ):
         item = summary.model_dump(mode="json")
+        fixture_requests = []
+        for fixture_name, fixture_location in fixtures.items():
+            fixture_requests.append(
+                self.get_object_qualified_name(
+                    fixture_name,
+                    None,
+                    os.path.join(self.args["project"], fixture_location["path"]),
+                )
+            )
         return {
             "_id": module_hash,
             "type": CodeType.MODULE,
@@ -305,9 +294,12 @@ File content:
             "imports": item["imports"],
             "exports": item["exports"],
             "features_mapping": item["features_mapping"],
+            "fixture_requests": fixture_requests,
         }
 
-    def extra_information_component(self, component: TestMethodSummary, chunk):
+    def extra_information_test_method(
+        self, component: TestMethodSummary, chunk, fixtures
+    ):
         item = component.model_dump(mode="json")
         return {
             "_id": chunk["hash"],
