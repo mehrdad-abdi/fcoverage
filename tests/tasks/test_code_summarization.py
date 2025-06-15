@@ -105,23 +105,42 @@ def component_summary_item_3():
     )
 
 
-def test_summary_to_document(object_under_test, module_summary_item):
-    documents = object_under_test.summary_to_document(module_summary_item)
-    assert len(documents) == 4
-    for doc in documents:
-        assert "chunk_type" in doc.metadata
-        assert "summary" not in doc.metadata
-        assert "id" not in doc.metadata
-        assert "code_type" in doc.metadata
-        assert doc.metadata["chunk_type"] == object_under_test.CHUNK_TYPE
-    assert documents[0].metadata["code_type"] == CodeType.MODULE
-
-
-def test_add_components_unique_ids(
-    object_under_test, module_summary_item, chunks, file_path
+@pytest.fixture
+def a_component(
+    request,
+    component,
 ):
-    documents = object_under_test.summary_to_document(module_summary_item)
-    object_under_test.add_components_unique_ids(file_path, documents[1:], chunks)
-    for doc in documents[1:]:
-        assert "id" in doc.metadata
-        assert doc.metadata["id"] in [c["hash"] for c in chunks.values()]
+    return request.getfixturevalue(component)
+
+
+def test_summary_to_document_module(object_under_test, module_summary_item):
+    doc = object_under_test.module_summary_to_document(module_summary_item, "hash")
+
+    assert "source" in doc.metadata
+    assert "summary" not in doc.metadata
+    assert "id" in doc.metadata
+    assert "code_type" in doc.metadata
+    assert doc.metadata["source"] == object_under_test.CHUNK_SOURCE
+    assert doc.metadata["code_type"] == CodeType.MODULE
+
+
+@pytest.mark.parametrize(
+    "component",
+    [
+        "component_summary_item_1",
+        "component_summary_item_2",
+        "component_summary_item_3",
+    ],
+)
+def test_summary_to_document_components(object_under_test, a_component):
+    doc = object_under_test.component_summary_to_document(a_component, hash)
+    assert "source" in doc.metadata
+    assert "summary" not in doc.metadata
+    assert "id" in doc.metadata
+    assert "code_type" in doc.metadata
+    assert doc.metadata["source"] == object_under_test.CHUNK_SOURCE
+    assert doc.metadata["code_type"] in [
+        CodeType.CLASS,
+        CodeType.FUNCTION,
+        CodeType.CLASS_METHOD,
+    ]

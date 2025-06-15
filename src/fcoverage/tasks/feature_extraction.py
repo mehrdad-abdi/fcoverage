@@ -7,34 +7,22 @@ from langchain_core.prompts import ChatPromptTemplate
 from fcoverage.utils.http import get_github_repo_details
 
 
-class FeatureExtractionTask(TasksBase):
-    """
-    This class is responsible for extracting features from the documents specified in the configuration.
-    It uses the LLMWrapper class to interact with a language model for feature extraction.
-    """
+PROMPT_FEATURE_EXTRACTION = "feature_extraction"
 
-    PROMPT_NAME = "feature_extraction.txt"
+
+class FeatureExtractionTask(TasksBase):
+
+    PROMPTS = [PROMPT_FEATURE_EXTRACTION]
 
     def __init__(self, args, config):
         super().__init__(args, config)
         self.documents = []
-        self.prompt_template = None
-        self.project_name = "not available"
-        self.project_description = "not available"
 
     def prepare(self):
         self.load_llm_model()
-        self.load_documents()
-        self.load_feature_extraction_prompt()
-        if "github" in self.args:
-            github_details = get_github_repo_details(self.args["github"])
-            self.project_name = github_details["repo_name"]
-            self.project_description = github_details["description"]
+        self.load_prompts()
 
     def load_documents(self):
-        """
-        Load documents from the specified directorieis in config.
-        """
         docs = self.config["documents"]
         for doc in docs:
             filename = os.path.join(self.args["project"], doc)
@@ -42,18 +30,25 @@ class FeatureExtractionTask(TasksBase):
                 content = file.read()
                 self.documents.append((doc, content))
 
-    def load_feature_extraction_prompt(self):
-        feature_extraction_prompt = self.load_prompt(self.PROMPT_NAME)
-        self.prompt_template = ChatPromptTemplate.from_messages(
-            messages=[("user", feature_extraction_prompt)]
-        )
+    def get_project_details(self):
+        project_name = "not available"
+        project_description = "not available"
+        if "github" in self.args:
+            github_details = get_github_repo_details(self.args["github"])
+            project_name = github_details["repo_name"]
+            project_description = github_details["description"]
+        return project_name, project_description
 
     def invoke_llm(self):
         documents = "\n\n".join([f"{doc[0]}\n{doc[1]}" for doc in self.documents])
-        prompt = self.prompt_template.invoke(
+        prompt_template = ChatPromptTemplate.from_messages(
+            messages=[("user", self.prompts[PROMPT_FEATURE_EXTRACTION])],
+        )
+        project_name, project_description = self.get_project_details()
+        prompt = prompt_template.invoke(
             {
-                "project_name": self.project_name,
-                "project_description": self.project_description,
+                "project_name": project_name,
+                "project_description": project_description,
                 "documents": documents,
             }
         )
@@ -187,6 +182,7 @@ Testing priority for this feature: **{feature.priority}**
         print(f"Feature extraction results written to {filename}")
 
     def run(self):
+        self.load_documents()
         response = self.invoke_llm()
         self.write_response_to_file(response)
         print("Feature extraction completed successfully.")
