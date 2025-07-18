@@ -1,39 +1,20 @@
 import json
 import sys
-import yaml
 import argparse
 import os
 from fcoverage.tasks import (
     FeatureExtractionTask,
     AnalyseTestsTask,
     CodeAnalysisTask,
-    CodeSummarizationTask,
 )
 
-DEFAULT_HOME = ".fcoverage"
-DEFAULT_CONFIG_PATH = f"{DEFAULT_HOME}/config.yml"
-
-
-def load_config(project_path):
-    config_file_path = os.path.join(os.path.abspath(project_path), DEFAULT_CONFIG_PATH)
-    if not os.path.exists(config_file_path):
-        raise FileNotFoundError(
-            f"Configuration file not found: {os.path.abspath(config_file_path)}"
-        )
-    with open(config_file_path, "r") as f:
-        config = yaml.safe_load(f)
-    return config
-
-
-def run_task(args, config):
-    if args["task"] == "feature-extraction":
-        task = FeatureExtractionTask(args=args, config=config)
-    elif args["task"] == "code-analysis":
-        task = CodeAnalysisTask(args=args, config=config)
-    elif args["task"] == "test-analysis":
-        task = AnalyseTestsTask(args=args, config=config)
-    elif args["task"] == "code-summary":
-        task = CodeSummarizationTask(args=args, config=config)
+def run_task(args):
+    if args["task"] == "catalog":
+        task = FeatureExtractionTask(args=args)
+    elif args["task"] == "manifest":
+        task = CodeAnalysisTask(args=args)
+    elif args["task"] == "coverage":
+        task = AnalyseTestsTask(args=args)
     task.prepare()
     return task.run()
 
@@ -61,16 +42,15 @@ def get_args():
     parser.add_argument(
         "--project",
         type=str,
-        help="Path to the main project directory.",
+        help="Path to the project directory.",
         required=True,
     )
     parser.add_argument(
         "--task",
         choices=[
-            "feature-extraction",
-            "code-analysis",
-            "test-analysis",
-            "code-summary",
+            "catalog",
+            "manifest",
+            "coverage",
         ],
         help="Task to run.",
         required=True,
@@ -79,6 +59,52 @@ def get_args():
         "--only-file",
         help="Run the task only on this file.",
     )
+    parser.add_argument(
+        "--vector-db-persist",
+        help="The path to store the vector database.",
+        default="vector-db"
+    )
+    parser.add_argument(
+        "--src-path",
+        help="The folder containing source codes within the project root.",
+        default="src"
+    )
+    parser.add_argument(
+        "--test-path",
+        help="The folder containing test codes within the project root.",
+        default="test"
+    )
+    parser.add_argument(
+        "--llm-model",
+        help="The name of llm model. See https://python.langchain.com/docs/integrations/chat/.",
+        default="gemini-2.0-flash"
+    )
+    parser.add_argument(
+        "--llm-provider",
+        help="The name of llm model provider. See https://python.langchain.com/docs/integrations/chat/.",
+        default="google_genai"
+    )
+    parser.add_argument(
+        "--embedding-model",
+        help="The name of embedding model. See https://python.langchain.com/docs/integrations/chat/.",
+        default="text-embedding-3-large"
+    )
+    parser.add_argument(
+        "--embedding-provider",
+        help="The name of llm embedding provider. See https://python.langchain.com/docs/integrations/chat/.",
+        default="openai"
+    )
+    parser.add_argument(
+        "--feature-definition",
+        help="The path of feature definition file. Required in manifest task",
+        default=""
+    )
+    parser.add_argument(
+        "--feature-manifest",
+        help="The path of feature manifest file. Required in coverage task",
+        default=""
+    )
+    
     args = parser.parse_args()
     return args
 
