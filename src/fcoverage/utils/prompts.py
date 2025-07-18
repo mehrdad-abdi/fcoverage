@@ -1,8 +1,15 @@
 from importlib.resources import files
+import re
 
 __all__ = [
     "read_prompt_file",
+    "escape_markdown",
 ]
+
+
+def escape_markdown(text):
+    # Escape common markdown characters
+    return re.sub(r"([\\`*_{}[\]()#+\-!])", r"\\\1", text)
 
 
 def read_prompt_file(file_name: str) -> str:

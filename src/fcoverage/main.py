@@ -1,34 +1,22 @@
-import json
 import sys
 import argparse
-import os
 from fcoverage.tasks import (
-    FeatureExtractionTask,
-    AnalyseTestsTask,
-    CodeAnalysisTask,
+    FeatureCatalogTask,
+    FeatureManifestTask,
+    FeatureCoverageTask,
 )
-
-def run_task(args):
-    if args["task"] == "catalog":
-        task = FeatureExtractionTask(args=args)
-    elif args["task"] == "manifest":
-        task = CodeAnalysisTask(args=args)
-    elif args["task"] == "coverage":
-        task = AnalyseTestsTask(args=args)
-    task.prepare()
-    return task.run()
 
 
 def main():
     args = get_args()
-
-    config = load_config(args.project)
-    print(yaml.dump(config, indent=2))
-    print(json.dumps(dict(os.environ), indent=2))
-
-    if not run_task(vars(args), config):
-        return 1
-    return 0
+    if args["task"] == "catalog":
+        task = FeatureCatalogTask(args=args)
+    elif args["task"] == "manifest":
+        task = FeatureManifestTask(args=args)
+    elif args["task"] == "coverage":
+        task = FeatureCoverageTask(args=args)
+    task.prepare()
+    return task.run()
 
 
 def get_args():
@@ -56,55 +44,62 @@ def get_args():
         required=True,
     )
     parser.add_argument(
-        "--only-file",
-        help="Run the task only on this file.",
+        "--out",
+        help="Output filename.",
+        default="",
     )
     parser.add_argument(
         "--vector-db-persist",
         help="The path to store the vector database.",
-        default="vector-db"
+        default="vector-db",
     )
     parser.add_argument(
         "--src-path",
         help="The folder containing source codes within the project root.",
-        default="src"
+        default="src",
     )
     parser.add_argument(
         "--test-path",
         help="The folder containing test codes within the project root.",
-        default="test"
+        default="test",
     )
     parser.add_argument(
         "--llm-model",
         help="The name of llm model. See https://python.langchain.com/docs/integrations/chat/.",
-        default="gemini-2.0-flash"
+        default="gemini-2.0-flash",
     )
     parser.add_argument(
         "--llm-provider",
         help="The name of llm model provider. See https://python.langchain.com/docs/integrations/chat/.",
-        default="google_genai"
+        default="google_genai",
     )
     parser.add_argument(
         "--embedding-model",
         help="The name of embedding model. See https://python.langchain.com/docs/integrations/chat/.",
-        default="text-embedding-3-large"
+        default="text-embedding-3-large",
     )
     parser.add_argument(
         "--embedding-provider",
         help="The name of llm embedding provider. See https://python.langchain.com/docs/integrations/chat/.",
-        default="openai"
+        default="openai",
+    )
+    parser.add_argument(
+        "--docs",
+        help="List of documentation files, within the project root, which feature catalog will be extacted from.",
+        default=[],
+        nargs="+",
     )
     parser.add_argument(
         "--feature-definition",
         help="The path of feature definition file. Required in manifest task",
-        default=""
+        default="",
     )
     parser.add_argument(
         "--feature-manifest",
         help="The path of feature manifest file. Required in coverage task",
-        default=""
+        default="",
     )
-    
+
     args = parser.parse_args()
     return args
 

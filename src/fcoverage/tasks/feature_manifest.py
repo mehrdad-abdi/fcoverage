@@ -15,7 +15,7 @@ from langchain_core.documents import Document
 from fcoverage.utils.vdb import VectorDBHelper
 
 
-class CodeAnalysisTask(TasksBase):
+class FeatureManifestTask(TasksBase):
 
     def __init__(self, args, config):
         super().__init__(args, config)

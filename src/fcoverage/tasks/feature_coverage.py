@@ -2,7 +2,7 @@ import os
 from .base import TasksBase
 
 
-class AnalyseTestsTask(TasksBase):
+class FeatureCoverageTask(TasksBase):
 
     def __init__(self, args, config):
         super().__init__(args, config)

@@ -1,11 +1,11 @@
 from fcoverage.models.feature_list import FeatureItem, ProjectFeatureAnalysis
-from fcoverage.tasks import FeatureExtractionTask
+from fcoverage.tasks import FeatureCatalogTask
 import pytest
 
 
 @pytest.fixture
 def object_under_test(args, config):
-    return FeatureExtractionTask(args, config)
+    return FeatureCatalogTask(args, config)
 
 
 @pytest.fixture
