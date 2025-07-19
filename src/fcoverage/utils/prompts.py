@@ -1,5 +1,4 @@
 from importlib.resources import files
-import re
 
 __all__ = [
     "read_prompt_file",

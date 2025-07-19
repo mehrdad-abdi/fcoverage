@@ -74,9 +74,9 @@ class FeatureDesignTask(TasksBase):
             result.append(f"File: {file}")
             with open(file, "w") as f:
                 content = f.read()
-            result.append(f"```")
+            result.append("```")
             result.append(escape_markdown(content))
-            result.append(f"```")
+            result.append("```")
 
         return "\n".join(result)
 
