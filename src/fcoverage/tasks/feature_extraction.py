@@ -26,7 +26,8 @@ class FeatureExtractionTask(TasksBase):
 
     def write_to_file(self, features_list):
         for item in features_list:
-            filename = f"features-definition-{item.name.repalce(" ","_")}.json"
+            name = item.name.repalce(" ", "_")
+            filename = f"features-definition-{name}.json"
             feature_item = item.model_dump(mode="json")
             if "keywords" in feature_item:
                 del feature_item["keywords"]
