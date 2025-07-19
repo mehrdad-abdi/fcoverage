@@ -1,7 +1,9 @@
 from json import tool
+import json
 import os
 from pathlib import Path
 from typing import Dict, List
+from fcoverage.models import FeatureItem
 from fcoverage.utils import prompts
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_tool_calling_agent, AgentExecutor
@@ -46,13 +48,13 @@ class TasksBase:
             embedding_provider=self.args["embedding-provider"],
         )
 
-    def get_tool_calling_llm(self, tools, prompt_template, verbose=False):
+    def get_tool_calling_llm(self, tools, prompt_template, memory=None, verbose=False):
         agent = create_tool_calling_agent(
             llm=self.model,
             tools=tools,
             prompt=prompt_template,
         )
-        return AgentExecutor(agent=agent, tools=tools, verbose=verbose)
+        return AgentExecutor(agent=agent, tools=tools, verbose=verbose, memory=memory)
 
     @tool
     def search_vector_db(self, query: str, k: int = 5) -> List[str]:
@@ -135,3 +137,21 @@ class TasksBase:
                     }
                 )
         return results
+
+    def load_feature_item(self):
+        definition_filepath = self.args["feature-definition"]
+        with open(definition_filepath, "r") as f:
+            feature_item_json = json.load(f)
+        return FeatureItem(**feature_item_json)
+
+    def load_feature_implementation(self):
+        design = self.args["feature-design"]
+        with open(design, "r") as f:
+            content = f.read()
+        return content
+
+    def load_test_cases(self):
+        test_cases = self.args["feature-test-cases"]
+        with open(test_cases, "r") as f:
+            content = f.read()
+        return content

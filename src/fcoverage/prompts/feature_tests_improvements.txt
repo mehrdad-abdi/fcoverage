@@ -1,0 +1,10 @@
+Assess the quality of existing tests. 
+
+Consider answering these questions:
+- Are the tests readable and easy to understand?
+- Are variable names clear? 
+- Do they use patterns like Arrange-Act-Assert?
+- Are they concise? 
+- Do you see any specific refactoring improvements?
+
+Create a list of actionable items including which tests are needed to be added and where, which tests need to updated.

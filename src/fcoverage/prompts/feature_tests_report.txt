@@ -1,0 +1,26 @@
+Generate a comprehensive "Test Quality Report" for this feature.
+
+Structure the report using the following sections. Be specific, clear, and provide actionable recommendations.
+
+1. Executive Summary
+   - Briefly state the overall health of the test coverage for this feature.
+   - Mention the key implementation and test files analyzed.
+
+2. Required Test Case Analysis
+  - **Ideal Test Suite**: Based on the feature's logic, describe the test cases that *should* exist. Categorize them:
+      - **Happy Path**: Tests for expected, successful user behavior.
+      - **Edge Cases**: Tests for boundary conditions (e.g., empty strings, zero/max values, null inputs).
+      - **Failure Modes**: Tests for expected errors (e.g., invalid permissions, failed API calls, bad input).
+
+3. Current Coverage Assessment
+  - **Implemented Tests**: List the tests that currently exist for this feature.
+  - **Coverage Gap Analysis**: Create a clear mapping of which "Required Test Cases" are **Covered**, **Partially Covered**, or **Not Covered** by the current test suite. Use the output from the coverage tools as evidence.
+
+4. Actionable Improvement Plan
+  - **Closing Coverage Gaps**: For each "Not Covered" case, provide a brief description of the missing test and a code snippet for how to implement it.
+  - **Improving Readability & Maintainability**: Assess the quality of existing tests. Are variable names clear? Do they use patterns like Arrange-Act-Assert? Are they concise? Suggest specific refactoring improvements.
+  - **Enhancing Test Strategy**: Recommend higher-level improvements. For example, "Introduce a data-driven test to cover all user roles instead of having separate tests," or "Mock the external `PDFService` to make these tests true unit tests and improve execution speed."
+
+5. Holistic Quality Review
+  - **Test Pyramid Balance**: Assess the types of tests present (unit, integration, etc.). Is there a healthy balance, or is the project relying too heavily on slow end-to-end tests?
+  - **Dependency Management**: Analyze how external dependencies (APIs, databases) are handled. Are they properly mocked or stubbed? Is there a risk of flaky tests due to live dependencies?

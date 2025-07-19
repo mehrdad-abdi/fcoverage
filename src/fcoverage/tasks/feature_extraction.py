@@ -21,18 +21,24 @@ class FeatureExtractionTask(TasksBase):
         self.index_source_code()
         self.enrich_with_code_files(features_list)
         self.enrich_with_test_files(features_list)
-
-        out = self.args["out"]
-        if not out:
-            out = "features-list.json"
-        with open(out, "w") as file:
-            file.write(json.dumps(features_list.model_dump(mode="json"), indent=2))
+        self.write_to_file(features_list)
         return True
+
+    def write_to_file(self, features_list):
+        for item in features_list:
+            filename = f"features-definition-{item.name.repalce(" ","_")}.json"
+            feature_item = item.model_dump(mode="json")
+            if "keywords" in feature_item:
+                del feature_item["keywords"]
+            if "queries" in feature_item:
+                del feature_item["queries"]
+            with open(os.path.join(self.args["out"], filename), "w") as file:
+                file.write(json.dumps(feature_item, indent=2))
 
     def load_documents(self):
         result = []
         for doc in self.args["docs"]:
-            filename = os.path.join(self.args["project"], doc)
+            filename = doc
             with open(filename, "r") as file:
                 content = file.read()
 
@@ -44,26 +50,21 @@ class FeatureExtractionTask(TasksBase):
 
         return "\n".join(result)
 
-    def load_feature_extraction_prompt(self, documents):
+    def extract_features(self):
         feature_extraction_prompt_template = PromptTemplate.from_template(
             self.load_prompt("feature_extraction.txt")
         )
-
+        documents = self.load_documents()
         prompt_feature_extraction = feature_extraction_prompt_template.invoke(
             {
                 "project_name": self.project_name,
                 "project_description": self.project_description,
                 "documents": documents,
+                "n_features": self.args["max-features"],
             }
         )
-        return prompt_feature_extraction
-
-    def extract_features(self):
-        documents = self.load_documents()
-        prompt = self.load_feature_extraction_prompt(documents)
-
         structured_llm = self.model.with_structured_output(ProjectFeatures)
-        return structured_llm.invoke(prompt)
+        return structured_llm.invoke(prompt_feature_extraction)
 
     def index_source_code(self):
         index_all_project(

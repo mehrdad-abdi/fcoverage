@@ -1,3 +1,4 @@
+import os
 import sys
 import argparse
 from fcoverage.tasks import (
@@ -9,6 +10,8 @@ from fcoverage.tasks import (
 
 def main():
     args = get_args()
+    os.makedirs(args["out"], exist_ok=True)
+
     if args["task"] == "extract":
         task = FeatureExtractionTask(args=args)
     elif args["task"] == "design":
@@ -51,8 +54,8 @@ def get_args():
     )
     parser.add_argument(
         "--out",
-        help="Output filename.",
-        default="",
+        help="Output folder.",
+        default="fcoverage",
     )
     parser.add_argument(
         "--vector-db-persist",
@@ -97,18 +100,24 @@ def get_args():
     )
     parser.add_argument(
         "--feature-definition",
-        help="The path of feature definition file. Required in design and coverage tasks",
+        help="The path of feature definition file. Required in design and coverage tasks.",
         default="",
     )
     parser.add_argument(
         "--feature-design",
-        help="The path of feature design file. Required in coverage task",
+        help="The path of feature design file. Required in coverage task.",
         default="",
     )
     parser.add_argument(
         "--feature-test-cases",
-        help="The path of feature test-case file. Required in coverage task",
+        help="The path of feature test-case file. Required in coverage task.",
         default="",
+    )
+    parser.add_argument(
+        "--max-features",
+        help="The max number of features to be extracted in extraction task.",
+        type=int,
+        default=10,
     )
 
     args = parser.parse_args()

@@ -1,0 +1,22 @@
+You are a senior Quality Assurance engineer.
+
+Consider the follwing context and answer the questions.
+
+## Context
+- **Project Name**: {project_name}
+- **Project Description**: {project_description}
+- **Feature to Analyze**: {feature_definition}
+    - *Feature Description*: {feature_description}
+    - *Feature Entry Point*: {feature_entry_point}
+
+### How feature is implemented
+
+{feature_implementation}
+
+### Ideal test-cases
+
+{ideal_test_cases}
+
+### Actual test-cases
+
+{actual_related_tests}
