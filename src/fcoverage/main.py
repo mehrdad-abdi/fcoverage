@@ -1,18 +1,18 @@
 import sys
 import argparse
 from fcoverage.tasks import (
-    FeatureCatalogTask,
-    FeatureManifestTask,
+    FeatureExtractionTask,
+    FeatureDesignTask,
     FeatureCoverageTask,
 )
 
 
 def main():
     args = get_args()
-    if args["task"] == "catalog":
-        task = FeatureCatalogTask(args=args)
-    elif args["task"] == "manifest":
-        task = FeatureManifestTask(args=args)
+    if args["task"] == "extract":
+        task = FeatureExtractionTask(args=args)
+    elif args["task"] == "design":
+        task = FeatureDesignTask(args=args)
     elif args["task"] == "coverage":
         task = FeatureCoverageTask(args=args)
     task.prepare()
@@ -22,10 +22,16 @@ def main():
 def get_args():
     parser = argparse.ArgumentParser(description="Feature Coverage Analysis Tool")
     parser.add_argument(
-        "--gitthub",
+        "--project-name",
         type=str,
-        help="The GitHub address of the project.",
-        required=False,
+        help="The name of the project.",
+        required=True,
+    )
+    parser.add_argument(
+        "--project-description",
+        type=str,
+        help="The project description.",
+        required=True,
     )
     parser.add_argument(
         "--project",
@@ -36,8 +42,8 @@ def get_args():
     parser.add_argument(
         "--task",
         choices=[
-            "catalog",
-            "manifest",
+            "extract",
+            "design",
             "coverage",
         ],
         help="Task to run.",
@@ -85,18 +91,23 @@ def get_args():
     )
     parser.add_argument(
         "--docs",
-        help="List of documentation files, within the project root, which feature catalog will be extacted from.",
+        help="List of documentation files, within the project root, which features list will be extacted from.",
         default=[],
         nargs="+",
     )
     parser.add_argument(
         "--feature-definition",
-        help="The path of feature definition file. Required in manifest task",
+        help="The path of feature definition file. Required in design and coverage tasks",
         default="",
     )
     parser.add_argument(
-        "--feature-manifest",
-        help="The path of feature manifest file. Required in coverage task",
+        "--feature-design",
+        help="The path of feature design file. Required in coverage task",
+        default="",
+    )
+    parser.add_argument(
+        "--feature-test-cases",
+        help="The path of feature test-case file. Required in coverage task",
         default="",
     )
 

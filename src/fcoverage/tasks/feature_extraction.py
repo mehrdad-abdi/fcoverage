@@ -1,72 +1,20 @@
 import json
 import os
 import time
-from typing import List, Literal, Set
-from pydantic import BaseModel, Field
+from typing import List, Set
+from fcoverage.models import ProjectFeatures, TestToFeatures
 from tqdm import tqdm
 from fcoverage.utils.code.pytest_utils import get_test_files, list_available_fixtures
 from fcoverage.utils.prompts import escape_markdown
 from fcoverage.utils.vdb import index_all_project
 from .base import TasksBase
-from fcoverage.utils.http import get_github_repo_details
 from langchain_core.prompts import PromptTemplate
-from langchain.agents import create_tool_calling_agent, AgentExecutor
 
 
-class FeatureItem(BaseModel):
-    name: str = Field(description="A short name or title for the feature.")
-    description: str = Field(
-        description="Provide a clear and complete explanation and answer these questions for the feature: what the feature is, how it works, who it is for, and the value it provides. Include all important details and use complete sentences that are informative, avoiding overly brief explanations."
-    )
-    entry_point: str = Field(
-        description="A description of how a user might access this feature (e.g., 'Through the 'Export' button on the user profile page', or 'Via the `/api/v2/report` endpoint'). If unknown, state 'Unknown'."
-    )
-    keywords: List[str] = Field(
-        description="list of relevant searchable keywords. You expect to see these keywords in the name of related files, classes, methods, functions. To be used in find or grep to discover these code portions."
-    )
-    queries: List[str] = Field(
-        description="list of relevant RAG queries to use similarity search for retrieve related production code."
-    )
-    priority: Literal["High", "Medium", "Low"] = Field(
-        description="Testing priority for this feature: High, Medium, or Low.",
-        enum=["High", "Medium", "Low"],
-    )
-    related_test_files: List[str] = Field(
-        description="This field will be used to store the list of test files related to this feature. Ignore it."
-    )
-    core_code_files: List[str] = Field(
-        description="This field will be used to store the list of core source code files related to this feature. Ignore it."
-    )
-
-
-class ProjectFeatures(BaseModel):
-    project_name: str = Field(
-        description="The official or working name of the software project."
-    )
-    project_description: str = Field(
-        description="The full description or summary of the project."
-    )
-    features: List[FeatureItem] = Field(
-        description="A list of structured feature records."
-    )
-
-
-class TestToFeatures(BaseModel):
-    related_features: List[str] = Field(
-        description="The list of feature names (exact name according the List of features) that the test tries to cover. Leave it empty if you couldn't relate the test to any feature."
-    )
-
-
-class FeatureCatalogTask(TasksBase):
+class FeatureExtractionTask(TasksBase):
 
     def __init__(self, args, config):
         super().__init__(args, config)
-        self.project_name = "not available"
-        self.project_description = "not available"
-
-    def prepare(self):
-        self.load_llm_model()
-        self.load_vector_db_helper()
 
     def run(self):
         features_list = self.extract_features()
@@ -76,7 +24,7 @@ class FeatureCatalogTask(TasksBase):
 
         out = self.args["out"]
         if not out:
-            out = "feature-catalog.json"
+            out = "features-list.json"
         with open(out, "w") as file:
             file.write(json.dumps(features_list.model_dump(mode="json"), indent=2))
         return True
@@ -100,11 +48,6 @@ class FeatureCatalogTask(TasksBase):
         feature_extraction_prompt_template = PromptTemplate.from_template(
             self.load_prompt("feature_extraction.txt")
         )
-
-        if "github" in self.args:
-            github_details = get_github_repo_details(self.args["github"])
-            self.project_name = github_details["repo_name"]
-            self.project_description = github_details["description"]
 
         prompt_feature_extraction = feature_extraction_prompt_template.invoke(
             {
@@ -133,9 +76,7 @@ class FeatureCatalogTask(TasksBase):
         )
 
     def enrich_with_test_files(self, features_list: ProjectFeatures):
-        test_folder = os.path.join(self.args["project"], self.args["test-path"])
-
-        for test_file in tqdm(get_test_files(test_folder)):
+        for test_file in tqdm(get_test_files(self.project_tests)):
             relation = self.realte_test_file_to_features(test_file)
             for feature in features_list.features:
                 if feature.name in relation.related_features:
@@ -147,20 +88,17 @@ class FeatureCatalogTask(TasksBase):
             time.sleep(4)  # respect rate-limit
 
     def realte_test_file_to_features(
-        self, test_path: str, features_list, verbose=False
+        self, test_path: str, features_list
     ) -> TestToFeatures:
         test_to_feature_prompt_template = self.load_prompt("test_to_feature.txt")
-        tools = [
-            self.search_vector_db,
-            self.grep_string,
-            self.load_file_section,
-        ]
-        agent = create_tool_calling_agent(
-            llm=self.model,
-            tools=tools,
-            prompt=PromptTemplate.from_template(test_to_feature_prompt_template),
+        agent_executor = self.get_tool_calling_llm(
+            [
+                self.search_vector_db,
+                self.grep_string,
+                self.load_file_section,
+            ],
+            PromptTemplate.from_template(test_to_feature_prompt_template),
         )
-        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=verbose)
 
         with open(test_path, "r") as f:
             test_code = f.read()

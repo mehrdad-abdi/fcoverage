@@ -1,8 +1,10 @@
+from json import tool
 import os
 from pathlib import Path
 from typing import Dict, List
 from fcoverage.utils import prompts
 from langchain.chat_models import init_chat_model
+from langchain.agents import create_tool_calling_agent, AgentExecutor
 
 from fcoverage.utils.vdb import VectorDBHelper
 
@@ -10,11 +12,16 @@ from fcoverage.utils.vdb import VectorDBHelper
 class TasksBase:
     def __init__(self, args):
         self.args = args
+        self.project_name = self.args["project-name"]
+        self.project_description = self.args["project-description"]
+        self.project_src = os.path.join(self.args["project"], self.args["src-path"])
+        self.project_tests = os.path.join(self.args["project"], self.args["test-path"])
         self.model = None
         self.vdb = None
 
     def prepare(self):
-        raise NotImplementedError("Subclasses must implement this method")
+        self.load_llm_model()
+        self.load_vector_db_helper()
 
     def run(self):
         raise NotImplementedError("Subclasses must implement this method")
@@ -39,7 +46,13 @@ class TasksBase:
             embedding_provider=self.args["embedding-provider"],
         )
 
-    from langchain_core.tools import tool
+    def get_tool_calling_llm(self, tools, prompt_template, verbose=False):
+        agent = create_tool_calling_agent(
+            llm=self.model,
+            tools=tools,
+            prompt=prompt_template,
+        )
+        return AgentExecutor(agent=agent, tools=tools, verbose=verbose)
 
     @tool
     def search_vector_db(self, query: str, k: int = 5) -> List[str]:
