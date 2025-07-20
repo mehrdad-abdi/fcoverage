@@ -1,7 +1,7 @@
-import json
 import os
 from pathlib import Path
 import subprocess
+from typing import List
 
 
 def get_test_files(src_path: str):
@@ -17,10 +17,15 @@ def get_test_files(src_path: str):
     return list(test_files)
 
 
-def list_available_fixtures(project_root, test_path, pythonpath: str = None):
-    test_path_relative = Path(test_path).relative_to(project_root)
+def list_available_fixtures(
+    project_root: str, test_path: str, filter: List[str], pythonpath: str = None
+):
+    if test_path.startswith(project_root):
+        test_path_relative = str(Path(test_path).relative_to(project_root))
+    else:
+        test_path_relative = test_path
     cmd_out = run_cmd(
-        "pytest --fixtures-per-test --fixtures -q " + str(test_path_relative),
+        "pytest --fixtures-per-test --fixtures -q " + test_path_relative,
         project_root,
         pythonpath=pythonpath,
     )
@@ -28,41 +33,29 @@ def list_available_fixtures(project_root, test_path, pythonpath: str = None):
     lines = [
         line
         for line in cmd_out
-        if "--" in line and "---" not in line and not line.startswith(" ")
+        if "--" in line
+        and "---" not in line
+        and not line.startswith(" ")
+        and "..." not in line
     ]
     for line in lines:
         parts = line.split("--", 1)
 
         fixture_name = parts[0].strip()
         fixture_path, line_number = parts[1].strip().split(":", 1)
-        is_in_project = os.path.abspath(
-            os.path.join(project_root, fixture_path)
-        ).startswith(project_root)
-        if not is_in_project:
+        keep = False
+        for f in filter:
+            if fixture_path.startswith(f):
+                keep = True
+                break
+
+        if not keep:
             continue
         fixtures[fixture_name] = {
             "path": fixture_path,
             "line_number": line_number,
         }
     return fixtures
-
-
-def list_fixtures_used_in_test(project_root, test_path, pythonpath: str = None):
-    test_path_relative = Path(test_path).relative_to(project_root)
-    cmd_out = run_cmd(
-        "pytest --setup-only -q --setup-show " + str(test_path_relative),
-        project_root,
-        pythonpath=pythonpath,
-    )
-    fixtures = {}
-    fixtures = [line.split()[2] for line in cmd_out if "SETUP" in line]
-
-    defined_fixtures = list_available_fixtures(
-        project_root, test_path, pythonpath=pythonpath
-    )
-    used_fixtures = {k: v for k, v in defined_fixtures.items() if k in fixtures}
-
-    return used_fixtures
 
 
 def run_cmd(command: str, working_directory, pythonpath: str = None):
@@ -79,28 +72,3 @@ def run_cmd(command: str, working_directory, pythonpath: str = None):
     if result.returncode != 0:
         print("Error:", result.stderr)
     return result.stdout.splitlines()
-
-
-def run_test_and_collect_function_coverage(
-    root_dir: str, src_path: str, test_target: str
-):
-    print(f"Measuring coverage: {test_target} in {root_dir} against {src_path}")
-    src_path_relative = Path(src_path).relative_to(root_dir)
-
-    run_cmd(
-        f"pytest --cov={src_path_relative} --cov-report=json -q --tb=short --disable-warnings {test_target}",
-        root_dir,
-        pythonpath=str(src_path),
-    )
-
-    with open(os.path.join(root_dir, "coverage.json"), "r") as f:
-        coverage_report = json.load(f)
-
-    covered_functions = set()
-
-    for file_name, coverage_info in coverage_report["files"].items():
-        for function_name, function_coverage in coverage_info["functions"].items():
-            if function_name and function_coverage["executed_lines"]:
-                covered_functions.add((file_name, function_name))
-
-    return sorted(covered_functions, key=lambda x: (x[0], x[1]))

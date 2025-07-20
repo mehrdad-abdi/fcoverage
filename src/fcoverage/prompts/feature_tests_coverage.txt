@@ -1,0 +1,2 @@
+Consider the ideal test cases and the actual test cases and explain which test cases are covered completely, partially, incorrectly or not covered.
+Explain your assessments or provide evidences.

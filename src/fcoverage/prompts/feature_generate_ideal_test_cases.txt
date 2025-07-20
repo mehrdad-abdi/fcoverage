@@ -1,0 +1,15 @@
+You are a senior Quality Assurance engineer.
+
+Consider the follwing context and generate a list of ideal test cases that *should* exist.
+Include happy path tests, boundary conditions and expected errors, and all other tests you expect.
+
+## Context
+- **Project Name**: {project_name}
+- **Project Description**: {project_description}
+- **Feature to Analyze**: {feature_definition}
+    - *Feature Description*: {feature_description}
+    - *Feature Entry Point*: {feature_entry_point}
+
+### How feature is implemented
+
+{feature_implementation}

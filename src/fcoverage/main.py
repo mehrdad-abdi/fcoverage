@@ -1,84 +1,125 @@
-import json
-import sys
-import yaml
-import argparse
 import os
+import sys
+import argparse
 from fcoverage.tasks import (
     FeatureExtractionTask,
-    AnalyseTestsTask,
-    CodeAnalysisTask,
-    CodeSummarizationTask,
+    FeatureDesignTask,
+    FeatureCoverageTask,
 )
-
-DEFAULT_HOME = ".fcoverage"
-DEFAULT_CONFIG_PATH = f"{DEFAULT_HOME}/config.yml"
-
-
-def load_config(project_path):
-    config_file_path = os.path.join(os.path.abspath(project_path), DEFAULT_CONFIG_PATH)
-    if not os.path.exists(config_file_path):
-        raise FileNotFoundError(
-            f"Configuration file not found: {os.path.abspath(config_file_path)}"
-        )
-    with open(config_file_path, "r") as f:
-        config = yaml.safe_load(f)
-    return config
-
-
-def run_task(args, config):
-    if args["task"] == "feature-extraction":
-        task = FeatureExtractionTask(args=args, config=config)
-    elif args["task"] == "code-analysis":
-        task = CodeAnalysisTask(args=args, config=config)
-    elif args["task"] == "test-analysis":
-        task = AnalyseTestsTask(args=args, config=config)
-    elif args["task"] == "code-summary":
-        task = CodeSummarizationTask(args=args, config=config)
-    task.prepare()
-    return task.run()
 
 
 def main():
     args = get_args()
+    os.makedirs(args["out"], exist_ok=True)
 
-    config = load_config(args.project)
-    print(yaml.dump(config, indent=2))
-    print(json.dumps(dict(os.environ), indent=2))
-
-    if not run_task(vars(args), config):
-        return 1
-    return 0
+    if args["task"] == "extract":
+        task = FeatureExtractionTask(args=args)
+    elif args["task"] == "design":
+        task = FeatureDesignTask(args=args)
+    elif args["task"] == "coverage":
+        task = FeatureCoverageTask(args=args)
+    task.prepare()
+    return task.run()
 
 
 def get_args():
     parser = argparse.ArgumentParser(description="Feature Coverage Analysis Tool")
     parser.add_argument(
-        "--gitthub",
+        "--project-name",
         type=str,
-        help="The GitHub address of the project.",
-        required=False,
+        help="The name of the project.",
+        required=True,
+    )
+    parser.add_argument(
+        "--project-description",
+        type=str,
+        help="The project description.",
+        required=True,
     )
     parser.add_argument(
         "--project",
         type=str,
-        help="Path to the main project directory.",
+        help="Path to the project directory.",
         required=True,
     )
     parser.add_argument(
         "--task",
         choices=[
-            "feature-extraction",
-            "code-analysis",
-            "test-analysis",
-            "code-summary",
+            "extract",
+            "design",
+            "coverage",
         ],
         help="Task to run.",
         required=True,
     )
     parser.add_argument(
-        "--only-file",
-        help="Run the task only on this file.",
+        "--out",
+        help="Output folder.",
+        default="fcoverage",
     )
+    parser.add_argument(
+        "--vector-db-persist",
+        help="The path to store the vector database.",
+        default="vector-db",
+    )
+    parser.add_argument(
+        "--src-path",
+        help="The folder containing source codes within the project root.",
+        default="src",
+    )
+    parser.add_argument(
+        "--test-path",
+        help="The folder containing test codes within the project root.",
+        default="test",
+    )
+    parser.add_argument(
+        "--llm-model",
+        help="The name of llm model. See https://python.langchain.com/docs/integrations/chat/.",
+        default="gemini-2.0-flash",
+    )
+    parser.add_argument(
+        "--llm-provider",
+        help="The name of llm model provider. See https://python.langchain.com/docs/integrations/chat/.",
+        default="google_genai",
+    )
+    parser.add_argument(
+        "--embedding-model",
+        help="The name of embedding model. See https://python.langchain.com/docs/integrations/chat/.",
+        default="text-embedding-3-large",
+    )
+    parser.add_argument(
+        "--embedding-provider",
+        help="The name of llm embedding provider. See https://python.langchain.com/docs/integrations/chat/.",
+        default="openai",
+    )
+    parser.add_argument(
+        "--docs",
+        help="List of documentation files, within the project root, which features list will be extacted from.",
+        default=[],
+        nargs="+",
+    )
+    parser.add_argument(
+        "--feature-definition",
+        help="The path of feature definition file. Required in design and coverage tasks.",
+        default="",
+    )
+    parser.add_argument(
+        "--feature-design",
+        help="The path of feature design file. Required in coverage task.",
+        default="",
+    )
+    parser.add_argument(
+        "--feature-test-cases",
+        help="The path of feature test-case file. Required in coverage task.",
+        default="",
+    )
+    parser.add_argument(
+        "--max-features",
+        help="The max number of features to be extracted in extraction task.",
+        type=int,
+        default=10,
+    )
+
     args = parser.parse_args()
     return args
 
