@@ -9,7 +9,7 @@ from fcoverage.tasks import (
 
 
 def main():
-    args = get_args()
+    args = vars(get_args())
     os.makedirs(args["out"], exist_ok=True)
 
     if args["task"] == "extract":

@@ -102,6 +102,12 @@ jobs:
           pip install -e .
       - name: 'Run fcoverage'
         working-directory: ${{ github.workspace }}/target_repository
+        env:
+          LANGCHAIN_TRACING: true
+          LANGCHAIN_ENDPOINT: https://api.smith.langchain.com
+          LANGCHAIN_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           fcoverage \
             --project-name "${{ steps.repo_info.outputs.repo_name }}" \
