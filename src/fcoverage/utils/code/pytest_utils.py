@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import subprocess
+from typing import List
 
 
 def get_test_files(src_path: str):
@@ -16,10 +17,15 @@ def get_test_files(src_path: str):
     return list(test_files)
 
 
-def list_available_fixtures(project_root, test_path, pythonpath: str = None):
-    test_path_relative = Path(test_path).relative_to(project_root)
+def list_available_fixtures(
+    project_root: str, test_path: str, filter: List[str], pythonpath: str = None
+):
+    if test_path.startswith(project_root):
+        test_path_relative = str(Path(test_path).relative_to(project_root))
+    else:
+        test_path_relative = test_path
     cmd_out = run_cmd(
-        "pytest --fixtures-per-test --fixtures -q " + str(test_path_relative),
+        "pytest --fixtures-per-test --fixtures -q " + test_path_relative,
         project_root,
         pythonpath=pythonpath,
     )
@@ -37,10 +43,13 @@ def list_available_fixtures(project_root, test_path, pythonpath: str = None):
 
         fixture_name = parts[0].strip()
         fixture_path, line_number = parts[1].strip().split(":", 1)
-        is_in_project = os.path.abspath(
-            os.path.join(project_root, fixture_path)
-        ).startswith(project_root)
-        if not is_in_project:
+        keep = False
+        for f in filter:
+            if fixture_path.startswith(f):
+                keep = True
+                break
+
+        if not keep:
             continue
         fixtures[fixture_name] = {
             "path": fixture_path,

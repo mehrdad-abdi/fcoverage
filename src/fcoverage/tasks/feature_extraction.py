@@ -105,7 +105,7 @@ class FeatureExtractionTask(TasksBase):
         with open(test_path, "r") as f:
             test_code = f.read()
         test_fixtures = list_available_fixtures(
-            os.path.abspath(self.args["project"]), test_path
+            os.path.abspath(self.args["project"]), [self.project_tests], test_path
         )
 
         response = agent_executor.invoke(
