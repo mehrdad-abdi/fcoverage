@@ -108,7 +108,7 @@ jobs:
             --docs ${{ github.event.inputs.docs }} \
             --max-features ${{ github.event.inputs.max_features }}
 
-      - name: Build artifacts features list
+      - name: 'Build artifacts features list'
         uses: actions/upload-artifact@v4
         with:
           name: features_list
