@@ -60,17 +60,21 @@ class VectorDBHelper:
     def get_retriever(self):
         return self.vectorstore.as_retriever()
 
-    def sync_documents(self, documents: List[Document]):
+    def sync_documents(
+        self, documents: List[Document], batch_size=250, sleep_seconds=1
+    ):
         current_ids = [d.metadata["id"] for d in documents]
 
         # 1. Get all existing IDs from the DB
-        existing_ids = self.vectorstore.get()["id"]
+        existing_ids = self.vectorstore.get()["ids"]
 
         # 2. Identify what to delete and what to add
         ids_to_add = [id_ for id_ in current_ids if id_ not in existing_ids]
         ids_to_delete = [id_ for id_ in existing_ids if id_ not in current_ids]
 
-        print(f"sync_documents: documents={len(documents)} ids_to_add={len(ids_to_add)}, ids_to_delete={len(ids_to_delete)}")
+        print(
+            f"sync_documents: documents={len(documents)} ids_to_add={len(ids_to_add)}, ids_to_delete={len(ids_to_delete)}"
+        )
 
         # 3. Delete obsolete entries
         if ids_to_delete:
@@ -83,7 +87,10 @@ class VectorDBHelper:
                 if doc.metadata["id"] in ids_to_add:
                     docs_to_add.append(doc)
 
-            self.add_documents(docs_to_add)
+            for i in tqdm(range(0, len(docs_to_add), batch_size)):
+                batch = docs_to_add[i : i + batch_size]
+                self.add_documents(batch)
+                time.sleep(sleep_seconds)
 
 
 def index_all_project(
@@ -99,7 +106,4 @@ def index_all_project(
     for doc in docs:
         doc.metadata["id"] = hashlib.sha1(doc.page_content.encode("utf-8")).hexdigest()
 
-    for i in tqdm(range(0, len(docs), batch_size)):
-        batch = docs[i : i + batch_size]
-        vdb.sync_documents(batch)
-        time.sleep(sleep_seconds)
+    vdb.sync_documents(docs, batch_size, sleep_seconds)
