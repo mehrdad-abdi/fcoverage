@@ -62,7 +62,7 @@ class FeatureExtractionTask(TasksBase):
                 "project_name": self.project_name,
                 "project_description": self.project_description,
                 "documents": documents,
-                "n_features": self.args["max-features"],
+                "n_features": self.args["max_features"],
             }
         )
         structured_llm = self.model.with_structured_output(ProjectFeatures)

@@ -14,10 +14,10 @@ from fcoverage.utils.vdb import VectorDBHelper
 class TasksBase:
     def __init__(self, args):
         self.args = args
-        self.project_name = self.args["project-name"]
-        self.project_description = self.args["project-description"]
-        self.project_src = os.path.join(self.args["project"], self.args["src-path"])
-        self.project_tests = os.path.join(self.args["project"], self.args["test-path"])
+        self.project_name = self.args["project_name"]
+        self.project_description = self.args["project_description"]
+        self.project_src = os.path.join(self.args["project"], self.args["src_path"])
+        self.project_tests = os.path.join(self.args["project"], self.args["test_path"])
         self.model = None
         self.vdb = None
 
@@ -32,8 +32,8 @@ class TasksBase:
         return prompts.read_prompt_file(prompt_filename)
 
     def load_llm_model(self):
-        model_name = self.args.get("llm-model")
-        model_provider = self.args.get("llm-provider")
+        model_name = self.args.get("llm_model")
+        model_provider = self.args.get("llm_provider")
 
         self.model = init_chat_model(
             model_name,
@@ -42,10 +42,10 @@ class TasksBase:
 
     def load_vector_db_helper(self):
         self.vdb = VectorDBHelper(
-            persist_directory=self.args["vector-db-persist"],
+            persist_directory=self.args["vector_db_persist"],
             collection_name="fcoverage",
-            embedding_model=self.args["embedding-model"],
-            embedding_provider=self.args["embedding-provider"],
+            embedding_model=self.args["embedding_model"],
+            embedding_provider=self.args["embedding_provider"],
         )
 
     def get_tool_calling_llm(self, tools, prompt_template, memory=None, verbose=False):
@@ -139,19 +139,19 @@ class TasksBase:
         return results
 
     def load_feature_item(self):
-        definition_filepath = self.args["feature-definition"]
+        definition_filepath = self.args["feature_definition"]
         with open(definition_filepath, "r") as f:
             feature_item_json = json.load(f)
         return FeatureItem(**feature_item_json)
 
     def load_feature_implementation(self):
-        design = self.args["feature-design"]
+        design = self.args["feature_design"]
         with open(design, "r") as f:
             content = f.read()
         return content
 
     def load_test_cases(self):
-        test_cases = self.args["feature-test-cases"]
+        test_cases = self.args["feature_test_cases"]
         with open(test_cases, "r") as f:
             content = f.read()
         return content
