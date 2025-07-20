@@ -38,7 +38,8 @@ class FeatureExtractionTask(TasksBase):
 
     def load_documents(self):
         result = []
-        for doc in self.args["docs"]:
+        docs = [d.strip() for d in self.args["docs"].split(",")]
+        for doc in docs:
             filename = doc
             with open(filename, "r") as file:
                 content = file.read()
