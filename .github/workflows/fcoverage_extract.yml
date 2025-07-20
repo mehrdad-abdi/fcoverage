@@ -90,6 +90,7 @@ jobs:
           name: "vectorstore"
           run-id: ${{ github.event.inputs.vectorstore_download }}
           github-token: ${{ github.token }}
+          path: ${{ github.workspace }}/target_repository/vector-db
       - name: 'Check out fcoverage'
         uses: actions/checkout@v4
         with:
