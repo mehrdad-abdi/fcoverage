@@ -17,11 +17,13 @@ class FeatureExtractionTask(TasksBase):
         super().__init__(args)
 
     def run(self):
+        print("FeatureExtractionTask starts:")
         features_list = self.extract_features()
         self.index_source_code()
         self.enrich_with_code_files(features_list)
         self.enrich_with_test_files(features_list)
         self.write_to_file(features_list)
+        print("FeatureExtractionTask finished.")
         return True
 
     def write_to_file(self, features_list):

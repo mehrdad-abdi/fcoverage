@@ -20,7 +20,11 @@ def main():
     elif args["task"] == "coverage":
         task = FeatureCoverageTask(args=args)
     task.prepare()
-    return task.run()
+    success = task.run()
+    if success:
+        return 0
+    else:
+        return 1
 
 
 def get_args():

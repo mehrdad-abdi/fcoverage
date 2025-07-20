@@ -125,14 +125,15 @@ jobs:
             --embedding-provider ${{ steps.model_info.outputs.embeddings_provider }} \
             --docs "${{ github.event.inputs.docs }}" \
             --max-features ${{ github.event.inputs.max_features }}
-
       - name: 'Build artifacts features list'
         uses: actions/upload-artifact@v4
+        if: always() 
         with:
           name: features_list
           path: ${{ github.workspace }}/target_repository/fcoverage
       - name: 'Build artifacts vectorstore'
         uses: actions/upload-artifact@v4
+        if: always() 
         with:
           name: vectorstore
           path: ${{ github.workspace }}/target_repository/vector-db
