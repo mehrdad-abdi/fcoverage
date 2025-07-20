@@ -6,6 +6,7 @@ on:
       target_repository:
         description: 'Repository name for the project-under-test with owner. For example, actions/checkout'
         required: true
+        default: 'ytdl-org/youtube-dl'
       docs:
         description: 'Comma separated list of docs to be used in feature extraction.'
         required: true
@@ -19,7 +20,7 @@ on:
         default: 'src'
       test_path:
         description: 'tests folder within the repository'
-        default: 'test'
+        default: 'youtube-dl'
       llm_model:
         description: 'LLM model name and provider'
         type: choice
