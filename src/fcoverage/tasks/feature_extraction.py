@@ -28,7 +28,7 @@ class FeatureExtractionTask(TasksBase):
         print("write_to_file")
         print(str(features_list))
         for item in features_list.features:
-            name = item.name.repalce(" ", "_")
+            name = item.name.replace(" ", "_")
             filename = f"features-definition-{name}.json"
             feature_item = item.model_dump(mode="json")
             if "keywords" in feature_item:
