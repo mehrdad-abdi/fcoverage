@@ -39,10 +39,10 @@ class FeatureDesignTask(TasksBase):
         feature_implementaion_prompt_template = self.load_prompt("feature_design.txt")
         agent_executor = self.get_tool_calling_llm(
             [
-                self.search_vector_db,
-                self.grep_string,
-                self.load_file_section,
-                self.list_directory,
+                self.tool_search_vector_db(),
+                self.tool_grep_string(),
+                self.tool_load_file_section(),
+                self.tool_list_directory(),
             ],
             PromptTemplate.from_template(feature_implementaion_prompt_template),
         )
@@ -86,10 +86,10 @@ class FeatureDesignTask(TasksBase):
         )
         agent_executor = self.get_tool_calling_llm(
             [
-                self.search_vector_db,
-                self.grep_string,
-                self.load_file_section,
-                self.list_directory,
+                self.tool_search_vector_db(),
+                self.tool_grep_string(),
+                self.tool_load_file_section(),
+                self.tool_list_directory(),
             ],
             PromptTemplate.from_template(feature_implementaion_prompt_template),
         )

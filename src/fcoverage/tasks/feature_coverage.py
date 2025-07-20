@@ -78,9 +78,9 @@ class FeatureCoverageTask(TasksBase):
         )
         agent_executor = self.get_tool_calling_llm(
             tools=[
-                self.search_vector_db,
-                self.grep_string,
-                self.load_file_section,
+                self.tool_search_vector_db(),
+                self.tool_grep_string(),
+                self.tool_load_file_section(),
             ],
             prompt_template=prompt,
             memory=memory,

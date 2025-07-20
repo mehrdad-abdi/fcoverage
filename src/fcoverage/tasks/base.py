@@ -7,6 +7,7 @@ from fcoverage.utils import prompts
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 from langchain_core.tools import tool
+from functools import partial
 
 from fcoverage.utils.vdb import VectorDBHelper
 
@@ -56,7 +57,6 @@ class TasksBase:
         )
         return AgentExecutor(agent=agent, tools=tools, verbose=verbose, memory=memory)
 
-    @tool
     def search_vector_db(self, query: str, k: int = 5) -> List[str]:
         """Search the vector DB for chunks related to a natural language query."""
         results = self.vdb.search(query, k=k)
@@ -64,7 +64,6 @@ class TasksBase:
             f"[{doc.metadata.get('source')}]\n{doc.page_content}" for doc in results
         ]
 
-    @tool
     def load_file_section(self, path: str, start: int, end: int) -> str:
         """Load specific lines from a file."""
         try:
@@ -74,7 +73,6 @@ class TasksBase:
         except Exception as e:
             return f"Error reading file: {e}"
 
-    @tool
     def grep_string(
         self, search: str, page_size: int = 10, page: int = 1
     ) -> List[Dict[str, str]]:
@@ -101,7 +99,6 @@ class TasksBase:
         end_index = start_index + page_size
         return result[start_index:end_index]
 
-    @tool
     def list_directory(self, path: str) -> List[Dict[str, str]]:
         """List files and folders in a directory with metadata (type file or dir, size in kb if it's file, children count if a dir)."""
 
@@ -137,6 +134,21 @@ class TasksBase:
                     }
                 )
         return results
+
+    def tool_search_vector_db(self):
+        return tool(partial(self.search_vector_db))
+
+    
+    def tool_load_file_section(self):
+        return tool(partial(self.load_file_section))
+
+    
+    def tool_grep_string(self):
+        return tool(partial(self.grep_string))
+
+    def tool_list_directory(self):
+        return tool(partial(self.list_directory))
+
 
     def load_feature_item(self):
         definition_filepath = self.args["feature_definition"]
