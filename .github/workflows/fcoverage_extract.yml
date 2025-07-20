@@ -84,11 +84,11 @@ jobs:
           echo "embeddings_model=$EMB_MODEL_NAME" >> $GITHUB_OUTPUT
           echo "embeddings_provider=$EMB_MODEL_PROVIDER" >> $GITHUB_OUTPUT
       - name: 'Revert vectorstore'
-        if: ${{ github.event.inputs.target_run_id != '' }}
+        if: ${{ github.event.inputs.vectorstore_download != '' }}
         uses: actions/download-artifact@v4
         with:
           name: "vectorstore"
-          run-id: ${{ github.event.inputs.target_run_id }}
+          run-id: ${{ github.event.inputs.vectorstore_download }}
       - name: 'Check out fcoverage'
         uses: actions/checkout@v4
         with:
