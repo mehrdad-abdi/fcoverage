@@ -104,8 +104,8 @@ jobs:
         working-directory: ${{ github.workspace }}/target_repository
         run: |
           fcoverage \
-            --project-name ${{ steps.repo_info.outputs.repo_name }} \
-            --project-description ${{ steps.repo_info.outputs.description }} \
+            --project-name "${{ steps.repo_info.outputs.repo_name }}" \
+            --project-description "${{ steps.repo_info.outputs.description }}" \
             --project . \
             --task extract \
             --out fcoverage \
@@ -116,7 +116,7 @@ jobs:
             --llm-provider ${{ steps.model_info.outputs.llm_provider }} \
             --embedding-model ${{ steps.model_info.outputs.embeddings_model }} \
             --embedding-provider ${{ steps.model_info.outputs.embeddings_provider }} \
-            --docs ${{ github.event.inputs.docs }} \
+            --docs "${{ github.event.inputs.docs }}" \
             --max-features ${{ github.event.inputs.max_features }}
 
       - name: 'Build artifacts features list'
