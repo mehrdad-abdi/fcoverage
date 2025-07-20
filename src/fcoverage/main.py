@@ -94,9 +94,8 @@ def get_args():
     )
     parser.add_argument(
         "--docs",
-        help="List of documentation files, within the project root, which features list will be extacted from.",
-        default=[],
-        nargs="+",
+        help="Comma separeated list of documentation files, within the project root, which features list will be extacted from.",
+        default="",
     )
     parser.add_argument(
         "--feature-definition",

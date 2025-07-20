@@ -1,0 +1,120 @@
+name: 'fcoverage - feature extraction'
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_repository:
+        description: 'Repository name for the project-under-test with owner. For example, actions/checkout'
+        required: true
+      docs:
+        description: 'Comma separated list of docs to be used in feature extraction.'
+        required: true
+        default: 'README.md, CHANGELOG.md'
+      max_features:
+        description: 'The max number of features to extract'
+        type: int
+        default: 10
+      src_path:
+        description: 'src folder within the repository'
+        default: 'src'
+      test_path:
+        description: 'tests folder within the repository'
+        default: 'test'
+      llm_model:
+        description: 'LLM model name and provider'
+        type: choice
+        options:
+          - "google_genai:gemini-2.0-flash"
+          - "google_genai:gemini-2.5-pro"
+      embeddings_model:
+        description: 'Embeddings model name and provider'
+        type: choice
+        options:
+          - "openai:text-embedding-3-large"
+          - "google_genai:gemini-embedding-001"
+      
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Check out fcoverage'
+        uses: actions/checkout@v4
+        with:
+          repository: 'mehrdad-abdi/fcoverage'
+          path: 'fcoverage'
+      - name: 'Check out fcoverage'
+        uses: actions/checkout@v4
+        with:
+          repository:  ${{ github.event.inputs.target_repository }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: 'Install fcoverage'
+        run: |
+          echo "Installing fcoverage"
+          cd fcoverage
+          python -m pip install --upgrade pip
+          pip install -e .
+      - name: Split Owner and Repo Name
+        id: repo_info # Give this step an ID to access its outputs
+        run: |
+          FULL_REPO="${{ github.event.inputs.target_repository }}"
+          IFS='/' read -r OWNER REPO_NAME <<< "$FULL_REPO"
+
+          echo "Owner: $OWNER"
+          echo "Repo Name: $REPO_NAME"
+
+          REPO_DESCRIPTION=$(gh repo view "${{ github.event.inputs.target_repository }}" --json description -q .description)
+
+          # Set outputs for subsequent steps
+          echo "::set-output name=owner::$OWNER"
+          echo "::set-output name=repo_name::$REPO_NAME"
+          echo "::set-output name=description::${REPO_DESCRIPTION}"
+      - name: Split LLM Model Name
+        id: model_info
+        run: |
+          IFS=':' read -r MODEL_PROVIDER MODEL_NAME <<< "${{ github.event.inputs.llm_model }}"
+          IFS=':' read -r EMB_MODEL_PROVIDER EMB_MODEL_NAME <<< "${{ github.event.inputs.embeddings_model }}"
+
+          echo "LLM Model Provider: $MODEL_PROVIDER"
+          echo "LLM Model Name: $MODEL_NAME"
+          echo "Embeddings Model Provider: $EMB_MODEL_PROVIDER"
+          echo "Embeddings Model Name: $EMB_MODEL_NAME"
+
+          # Set outputs for subsequent steps
+          echo "::set-output name=llm_model::$MODEL_NAME"
+          echo "::set-output name=llm_provider::$MODEL_PROVIDER"
+          echo "::set-output name=embeddings_model::$EMB_MODEL_NAME"
+          echo "::set-output name=embeddings_provider::$EMB_MODEL_PROVIDER"
+      - name: 'Run fcoverage'
+        working-directory: ${{ github.workspace }}
+        run: |
+          fcoverage \
+            --project-name ${{ steps.repo_info.outputs.repo_name }} \
+            --project-description ${{ steps.repo_info.outputs.description }} \
+            --project . \
+            --task extract \
+            --out fcoverage \
+            --vector-db-persist vector-db \
+            --src-path ${{ github.event.inputs.src_path }} \
+            --test-path ${{ github.event.inputs.test_path }} \
+            --llm-model ${{ steps.model_info.outputs.llm_model }} \
+            --llm-provider ${{ steps.model_info.outputs.llm_provider }} \
+            --embedding-model ${{ steps.model_info.outputs.embeddings_model }} \
+            --embedding-provider ${{ steps.model_info.outputs.embeddings_provider }} \
+            --docs ${{ github.event.inputs.docs }} \
+            --max-features ${{ github.event.inputs.max_features }}
+
+      - name: Build artifacts: features list
+        uses: actions/upload-artifact@v4
+        with:
+          name: features_list
+          path: fcoverage
+      - name: 'Build artifacts: vectorstore'
+        uses: actions/upload-artifact@v4
+        with:
+          name: vectorstore
+          path: vector-db
