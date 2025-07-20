@@ -13,8 +13,8 @@ from langchain_core.prompts import PromptTemplate
 
 class FeatureExtractionTask(TasksBase):
 
-    def __init__(self, args, config):
-        super().__init__(args, config)
+    def __init__(self, args):
+        super().__init__(args)
 
     def run(self):
         features_list = self.extract_features()
