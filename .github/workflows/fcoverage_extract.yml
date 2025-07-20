@@ -43,6 +43,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository:  ${{ github.event.inputs.target_repository }}
+          path: ${{github.workspace}}/target_repository
       - name: Split Owner and Repo Name
         id: repo_info # Give this step an ID to access its outputs
         env:
@@ -80,7 +81,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: 'mehrdad-abdi/fcoverage'
-          path: ${{ env.HOME }}/fcoverage
+          path: ${{ github.workspace }}/fcoverage
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -93,14 +94,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-      
       - name: 'Install fcoverage'
-        working-directory: ${{ env.HOME }}/fcoverage
+        working-directory: ${{ github.workspace }}/fcoverage
         run: |
           echo "Installing fcoverage"
           ls
           python -m pip install --upgrade pip
           pip install -e .
       - name: 'Run fcoverage'
-        working-directory: ${{ github.workspace }}
+        working-directory: ${{ github.workspace }}/target_repository
         run: |
           fcoverage \
             --project-name ${{ steps.repo_info.outputs.repo_name }} \
