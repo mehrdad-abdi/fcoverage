@@ -80,7 +80,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: 'mehrdad-abdi/fcoverage'
-          path: '~/fcoverage'
+          path: ${{ env.HOME }}/fcoverage
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -93,11 +93,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-      
       - name: 'Install fcoverage'
-        working-directory: '~'
+        working-directory: ${{ env.HOME }}/fcoverage
         run: |
           echo "Installing fcoverage"
           ls
-          cd fcoverage
           python -m pip install --upgrade pip
           pip install -e .
       - name: 'Run fcoverage'

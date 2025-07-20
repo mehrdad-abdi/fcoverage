@@ -1,4 +1,3 @@
-from json import tool
 import json
 import os
 from pathlib import Path
@@ -7,6 +6,7 @@ from fcoverage.models import FeatureItem
 from fcoverage.utils import prompts
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_core.tools import tool
 
 from fcoverage.utils.vdb import VectorDBHelper
 
