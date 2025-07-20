@@ -39,22 +39,24 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: "Check out ${{ github.event.inputs.target_repository }}"
+        uses: actions/checkout@v4
+        with:
+          repository:  ${{ github.event.inputs.target_repository }}
       - name: 'Check out fcoverage'
         uses: actions/checkout@v4
         with:
           repository: 'mehrdad-abdi/fcoverage'
-          path: 'fcoverage'
-      - name: 'Check out fcoverage'
-        uses: actions/checkout@v4
-        with:
-          repository:  ${{ github.event.inputs.target_repository }}
+          path: '~/fcoverage'
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: 'Install fcoverage'
+        working-directory: '~'
         run: |
           echo "Installing fcoverage"
+          ls
           cd fcoverage
           python -m pip install --upgrade pip
           pip install -e .
