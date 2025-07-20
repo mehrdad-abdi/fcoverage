@@ -130,9 +130,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: features_list
-          path: fcoverage
+          path: ${{ github.workspace }}/target_repository/fcoverage
       - name: 'Build artifacts vectorstore'
         uses: actions/upload-artifact@v4
         with:
           name: vectorstore
-          path: vector-db
+          path: ${{ github.workspace }}/target_repository/vector-db
