@@ -27,7 +27,7 @@ class FeatureExtractionTask(TasksBase):
     def write_to_file(self, features_list):
         print("write_to_file")
         print(str(features_list))
-        for item in features_list:
+        for item in features_list.features:
             name = item.name.repalce(" ", "_")
             filename = f"features-definition-{name}.json"
             feature_item = item.model_dump(mode="json")
