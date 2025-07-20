@@ -64,11 +64,13 @@ class VectorDBHelper:
         current_ids = [d.metadata["id"] for d in documents]
 
         # 1. Get all existing IDs from the DB
-        existing_ids = self.vectorstore.get()["ids"]
+        existing_ids = self.vectorstore.get()["id"]
 
         # 2. Identify what to delete and what to add
         ids_to_add = [id_ for id_ in current_ids if id_ not in existing_ids]
         ids_to_delete = [id_ for id_ in existing_ids if id_ not in current_ids]
+
+        print(f"sync_documents: documents={len(documents)} ids_to_add={len(ids_to_add)}, ids_to_delete={len(ids_to_delete)}")
 
         # 3. Delete obsolete entries
         if ids_to_delete:
