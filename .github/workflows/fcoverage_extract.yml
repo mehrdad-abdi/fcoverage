@@ -62,6 +62,8 @@ jobs:
           pip install -e .
       - name: Split Owner and Repo Name
         id: repo_info # Give this step an ID to access its outputs
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           FULL_REPO="${{ github.event.inputs.target_repository }}"
           IFS='/' read -r OWNER REPO_NAME <<< "$FULL_REPO"
