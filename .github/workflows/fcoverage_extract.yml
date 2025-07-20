@@ -10,7 +10,7 @@ on:
       docs:
         description: 'Comma separated list of docs to be used in feature extraction.'
         required: true
-        default: 'README.md, CHANGELOG.md'
+        default: 'README.md, ChangeLog, youtube_dl/options.py'
       max_features:
         description: 'The max number of features to extract'
         type: int
