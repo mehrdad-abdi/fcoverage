@@ -33,6 +33,11 @@ on:
         options:
           - "openai:text-embedding-3-large"
           - "google_genai:gemini-embedding-001"
+      vectorstore_download:
+        description: 'The run id for a previous workflow run that has generated a vectorstore artifact.'
+        required: false
+        type: string
+        default: ''
       
 
 
@@ -78,6 +83,12 @@ jobs:
           echo "llm_provider=$MODEL_PROVIDER" >> $GITHUB_OUTPUT
           echo "embeddings_model=$EMB_MODEL_NAME" >> $GITHUB_OUTPUT
           echo "embeddings_provider=$EMB_MODEL_PROVIDER" >> $GITHUB_OUTPUT
+      - name: 'Revert vectorstore'
+        if: ${{ github.event.inputs.target_run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: "vectorstore"
+          run-id: ${{ github.event.inputs.target_run_id }}
       - name: 'Check out fcoverage'
         uses: actions/checkout@v4
         with:
@@ -110,6 +121,7 @@ jobs:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
+          ls
           fcoverage \
             --project-name "${{ steps.repo_info.outputs.repo_name }}" \
             --project-description "${{ steps.repo_info.outputs.description }}" \
