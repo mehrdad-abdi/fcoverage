@@ -30,9 +30,11 @@ class TasksBase:
         raise NotImplementedError("Subclasses must implement this method")
 
     def load_prompt(self, prompt_filename):
+        print(f"load_prompt -> {prompt_filename}")
         return prompts.read_prompt_file(prompt_filename)
 
     def load_llm_model(self):
+        print("load_llm_model")
         model_name = self.args.get("llm_model")
         model_provider = self.args.get("llm_provider")
 
@@ -42,6 +44,7 @@ class TasksBase:
         )
 
     def load_vector_db_helper(self):
+        print("load_vector_db_helper")
         self.vdb = VectorDBHelper(
             persist_directory=self.args["vector_db_persist"],
             collection_name="fcoverage",
@@ -50,6 +53,7 @@ class TasksBase:
         )
 
     def get_tool_calling_llm(self, tools, prompt_template, memory=None, verbose=False):
+        print("get_tool_calling_llm")
         agent = create_tool_calling_agent(
             llm=self.model,
             tools=tools,
@@ -138,31 +142,31 @@ class TasksBase:
     def tool_search_vector_db(self):
         return tool(partial(self.search_vector_db))
 
-    
     def tool_load_file_section(self):
         return tool(partial(self.load_file_section))
 
-    
     def tool_grep_string(self):
         return tool(partial(self.grep_string))
 
     def tool_list_directory(self):
         return tool(partial(self.list_directory))
 
-
     def load_feature_item(self):
+        print("load_feature_item")
         definition_filepath = self.args["feature_definition"]
         with open(definition_filepath, "r") as f:
             feature_item_json = json.load(f)
         return FeatureItem(**feature_item_json)
 
     def load_feature_implementation(self):
+        print("load_feature_implementation")
         design = self.args["feature_design"]
         with open(design, "r") as f:
             content = f.read()
         return content
 
     def load_test_cases(self):
+        print("load_test_cases")
         test_cases = self.args["feature_test_cases"]
         with open(test_cases, "r") as f:
             content = f.read()

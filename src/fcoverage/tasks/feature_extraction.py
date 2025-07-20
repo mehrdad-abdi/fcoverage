@@ -25,6 +25,8 @@ class FeatureExtractionTask(TasksBase):
         return True
 
     def write_to_file(self, features_list):
+        print("write_to_file")
+        print(str(features_list))
         for item in features_list:
             name = item.name.repalce(" ", "_")
             filename = f"features-definition-{name}.json"
@@ -53,6 +55,7 @@ class FeatureExtractionTask(TasksBase):
         return "\n".join(result)
 
     def extract_features(self):
+        print("extract_features")
         feature_extraction_prompt_template = PromptTemplate.from_template(
             self.load_prompt("feature_extraction.txt")
         )
@@ -69,6 +72,7 @@ class FeatureExtractionTask(TasksBase):
         return structured_llm.invoke(prompt_feature_extraction)
 
     def index_source_code(self):
+        print("index_source_code")
         index_all_project(
             self.vdb,
             self.args["project"],
@@ -79,6 +83,7 @@ class FeatureExtractionTask(TasksBase):
         )
 
     def enrich_with_test_files(self, features_list: ProjectFeatures):
+        print("enrich_with_test_files")
         for test_file in tqdm(get_test_files(self.project_tests)):
             relation = self.realte_test_file_to_features(test_file)
             for feature in features_list.features:
@@ -142,6 +147,7 @@ class FeatureExtractionTask(TasksBase):
         return output
 
     def enrich_with_code_files(self, features_list: ProjectFeatures):
+        print("enrich_with_code_files")
         for feature in features_list.features:
             files_1 = self.look_up_by_keywords_and_grep(feature.keywords)
             files_2 = self.look_up_by_vector_db(feature.queries)
