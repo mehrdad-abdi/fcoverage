@@ -95,7 +95,7 @@ class FeatureExtractionTask(TasksBase):
         test_to_feature = dict()
         for test_file in tqdm(get_test_files(self.project_tests)):
             relation = self.realte_test_file_to_features(test_file, features_list)
-            test_to_feature[test_file] = relation
+            test_to_feature[test_file] = relation.related_features
             self.zzz()
 
         feature_to_test = dict()
