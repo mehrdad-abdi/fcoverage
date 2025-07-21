@@ -1,6 +1,5 @@
 import json
 import os
-import time
 from typing import List, Set
 from fcoverage.models import (
     FeatureItem,
@@ -9,7 +8,7 @@ from fcoverage.models import (
     FeatureManifest,
 )
 from tqdm import tqdm
-from fcoverage.utils.code.pytest_utils import get_test_files, list_available_fixtures
+from fcoverage.utils.code.pytest_utils import get_test_files
 from fcoverage.utils.prompts import escape_markdown
 from fcoverage.utils.vdb import index_all_project
 from .base import TasksBase
@@ -24,7 +23,6 @@ class FeatureExtractionTask(TasksBase):
     def run(self):
         print("FeatureExtractionTask starts:")
         features_list = self.extract_features()
-        self.index_source_code()
         test_to_features = self.extract_test_files(features_list)
         for feature in features_list.features:
             code_files = self.extract_code_files(feature)
@@ -92,12 +90,11 @@ class FeatureExtractionTask(TasksBase):
         )
 
     def extract_test_files(self, features_list: ProjectFeatures):
-        print("enrich_with_test_files")
         test_to_feature = dict()
         for test_file in tqdm(get_test_files(self.project_tests)):
             relation = self.realte_test_file_to_features(test_file, features_list)
             test_to_feature[test_file] = relation
-            time.sleep(4)  # respect rate-limit
+            self.zzz()
 
         feature_to_test = dict()
         for feature in features_list:
@@ -112,6 +109,7 @@ class FeatureExtractionTask(TasksBase):
     def realte_test_file_to_features(
         self, test_path: str, features_list
     ) -> TestToFeatures:
+        print(f"realte_test_file_to_features: {test_path}")
         test_to_feature_prompt_template = self.load_prompt("test_to_feature.txt")
         agent_executor = self.get_tool_calling_llm(
             [
@@ -138,6 +136,7 @@ class FeatureExtractionTask(TasksBase):
 
         result = response["output"]
         structured_llm = self.model.with_structured_output(TestToFeatures)
+        self.zzz()
         test_to_features = structured_llm.invoke(result)
         return test_to_features
 

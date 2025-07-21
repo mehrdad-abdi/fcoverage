@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import time
 from typing import Dict, List
 from fcoverage.models import FeatureItem
 from fcoverage.utils import prompts
@@ -25,9 +26,13 @@ class TasksBase:
     def prepare(self):
         self.load_llm_model()
         self.load_vector_db_helper()
+        self.index_source_code()
 
     def run(self):
         raise NotImplementedError("Subclasses must implement this method")
+
+    def zzz(self, seconds: int = 5):
+        time.sleep(seconds)
 
     def load_prompt(self, prompt_filename):
         print(f"load_prompt -> {prompt_filename}")
