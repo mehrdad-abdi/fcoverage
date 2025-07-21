@@ -2,7 +2,12 @@ import json
 import os
 import time
 from typing import List, Set
-from fcoverage.models import ProjectFeatures, TestToFeatures
+from fcoverage.models import (
+    FeatureItem,
+    ProjectFeatures,
+    TestToFeatures,
+    FeatureManifest,
+)
 from tqdm import tqdm
 from fcoverage.utils.code.pytest_utils import get_test_files, list_available_fixtures
 from fcoverage.utils.prompts import escape_markdown
@@ -20,25 +25,27 @@ class FeatureExtractionTask(TasksBase):
         print("FeatureExtractionTask starts:")
         features_list = self.extract_features()
         self.index_source_code()
-        self.enrich_with_code_files(features_list)
-        self.enrich_with_test_files(features_list)
-        self.write_to_file(features_list)
+        test_to_features = self.extract_test_files(features_list)
+        for feature in features_list.features:
+            code_files = self.extract_code_files(feature)
+            feature_manifest = FeatureManifest(
+                name=feature.name,
+                description=feature.description,
+                entry_point=feature.entry_point,
+                core_code_files=code_files,
+                related_test_files=test_to_features[feature.name],
+            )
+            self.write_to_file(feature_manifest)
         print("FeatureExtractionTask finished.")
         return True
 
-    def write_to_file(self, features_list):
-        print("write_to_file")
-        print(str(features_list))
-        for item in features_list.features:
-            name = item.name.replace(" ", "_")
-            filename = f"features-definition-{name}.json"
-            feature_item = item.model_dump(mode="json")
-            if "keywords" in feature_item:
-                del feature_item["keywords"]
-            if "queries" in feature_item:
-                del feature_item["queries"]
-            with open(os.path.join(self.args["out"], filename), "w") as file:
-                file.write(json.dumps(feature_item, indent=2))
+    def write_to_file(self, feature_manifest: FeatureManifest):
+        print(f"write_to_file: {feature_manifest.name}")
+
+        name = feature_manifest.name.replace(" ", "_")
+        filename = f"features-definition-{name}.json"
+        with open(os.path.join(self.args["out"], filename), "w") as file:
+            file.write(json.dumps(feature_manifest.model_dump(mode="json"), indent=2))
 
     def load_documents(self):
         result = []
@@ -56,7 +63,7 @@ class FeatureExtractionTask(TasksBase):
 
         return "\n".join(result)
 
-    def extract_features(self):
+    def extract_features(self) -> ProjectFeatures:
         print("extract_features")
         feature_extraction_prompt_template = PromptTemplate.from_template(
             self.load_prompt("feature_extraction.txt")
@@ -84,18 +91,24 @@ class FeatureExtractionTask(TasksBase):
             sleep_seconds=1,
         )
 
-    def enrich_with_test_files(self, features_list: ProjectFeatures):
+    def extract_test_files(self, features_list: ProjectFeatures):
         print("enrich_with_test_files")
+        test_to_feature = dict()
         for test_file in tqdm(get_test_files(self.project_tests)):
-            relation = self.realte_test_file_to_features(test_file)
-            for feature in features_list.features:
-                if feature.name in relation.related_features:
-                    if feature.related_test_files is None:
-                        feature.related_test_files = []
-                    if test_file not in feature.related_test_files:
-                        feature.related_test_files.append(test_file)
+            relation = self.realte_test_file_to_features(test_file, features_list)
+            test_to_feature[test_file] = relation
 
             time.sleep(4)  # respect rate-limit
+
+        feature_to_test = dict()
+        for test, features in test_to_feature.items():
+            for feature in features:
+                if feature not in feature_to_test:
+                    feature_to_test[feature] = []
+                if test not in feature_to_test[feature]:
+                    feature_to_test[feature].append(test)
+
+        return feature_to_test
 
     def realte_test_file_to_features(
         self, test_path: str, features_list
@@ -148,9 +161,8 @@ class FeatureExtractionTask(TasksBase):
                 output.add(item.metadata.get("source"))
         return output
 
-    def enrich_with_code_files(self, features_list: ProjectFeatures):
-        print("enrich_with_code_files")
-        for feature in features_list.features:
-            files_1 = self.look_up_by_keywords_and_grep(feature.keywords)
-            files_2 = self.look_up_by_vector_db(feature.queries)
-            feature.core_code_files = list(files_1.union(files_2))
+    def extract_code_files(self, feature: FeatureItem):
+        print(f"extract_code_files: {feature.name}")
+        files_1 = self.look_up_by_keywords_and_grep(feature.keywords)
+        files_2 = self.look_up_by_vector_db(feature.queries)
+        return list(files_1.union(files_2))

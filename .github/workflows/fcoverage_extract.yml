@@ -37,7 +37,7 @@ on:
         description: 'The run id for a previous workflow run that has generated a vectorstore artifact.'
         required: false
         type: int
-        default: 16402071012
+        default: 0
       
 
 
