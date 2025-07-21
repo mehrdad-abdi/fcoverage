@@ -111,6 +111,7 @@ jobs:
           FEATURE_NAME: ${{ github.event.inputs.feature_name }}
         run: |
           cat "${{ github.workspace }}/target_repository/fcoverage/features-definition-${FEATURE_NAME// /_}.json"
+          cat "${{ steps.feature.outputs.feature_filename }}"
       - name: 'Check out fcoverage'
         uses: actions/checkout@v4
         with:
