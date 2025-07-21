@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import time
 from typing import Any, Dict, List
-from fcoverage.models import FeatureItem
+from fcoverage.models import FeatureManifest
 from fcoverage.utils import prompts
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_tool_calling_agent, AgentExecutor
@@ -216,7 +216,7 @@ class TasksBase:
         definition_filepath = self.args["feature_definition"]
         with open(definition_filepath, "r") as f:
             feature_item_json = json.load(f)
-        return FeatureItem(**feature_item_json)
+        return FeatureManifest(**feature_item_json)
 
     def load_feature_implementation(self):
         print("load_feature_implementation")

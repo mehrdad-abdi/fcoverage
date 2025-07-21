@@ -1,6 +1,6 @@
 import os
 from .base import TasksBase
-from fcoverage.models import FeatureItem
+from fcoverage.models import FeatureManifest
 from langchain_core.prompts import PromptTemplate
 from fcoverage.utils.prompts import escape_markdown
 
@@ -9,7 +9,7 @@ class FeatureDesignTask(TasksBase):
 
     def __init__(self, args):
         super().__init__(args)
-        self.feature_item: None | FeatureItem = None
+        self.feature_item: None | FeatureManifest = None
 
     def prepare(self):
         super().prepare()
