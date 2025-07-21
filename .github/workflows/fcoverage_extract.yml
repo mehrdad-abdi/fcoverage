@@ -155,7 +155,7 @@ jobs:
           echo "# Extracted Features" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          for file in path/to/your/json_folder/*.json; do
+          for file in "${{ github.workspace }}/target_repository/fcoverage/*.json"; do
             echo "## \`$(basename "$file")\`" >> $GITHUB_STEP_SUMMARY
             echo '```json' >> $GITHUB_STEP_SUMMARY
             jq '.' "$file" >> $GITHUB_STEP_SUMMARY
