@@ -17,10 +17,10 @@ on:
         default: 10
       src_path:
         description: 'src folder within the repository'
-        default: 'src'
+        default: 'youtube-dl'
       test_path:
         description: 'tests folder within the repository'
-        default: 'youtube-dl'
+        default: 'test'
       llm_model:
         description: 'LLM model name and provider'
         type: choice

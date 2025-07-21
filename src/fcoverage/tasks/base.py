@@ -62,14 +62,12 @@ class TasksBase:
         return AgentExecutor(agent=agent, tools=tools, verbose=verbose, memory=memory)
 
     def search_vector_db(self, query: str, k: int = 5) -> List[str]:
-        """Search the vector DB for chunks related to a natural language query."""
         results = self.vdb.search(query, k=k)
         return [
             f"[{doc.metadata.get('source')}]\n{doc.page_content}" for doc in results
         ]
 
     def load_file_section(self, path: str, start: int, end: int) -> str:
-        """Load specific lines from a file."""
         try:
             with open(path, "r") as f:
                 lines = f.readlines()
@@ -80,7 +78,6 @@ class TasksBase:
     def grep_string(
         self, search: str, page_size: int = 10, page: int = 1
     ) -> List[Dict[str, str]]:
-        """Search for a string in code files and return matching lines with file name and line number. Supports pagination."""
         result = []
         for file in Path(self.args["project"]).rglob("*.py"):
             try:
@@ -104,8 +101,6 @@ class TasksBase:
         return result[start_index:end_index]
 
     def list_directory(self, path: str) -> List[Dict[str, str]]:
-        """List files and folders in a directory with metadata (type file or dir, size in kb if it's file, children count if a dir)."""
-
         path_abs = os.path.join(self.args["project"], path)
         path_obj = Path(path_abs)
         if not path_obj.exists():
@@ -140,16 +135,38 @@ class TasksBase:
         return results
 
     def tool_search_vector_db(self):
-        return tool(partial(self.search_vector_db))
+        @tool
+        def search_vector_db(query: str, k: int = 5) -> List[str]:
+            """Search the vector DB for chunks related to a natural language query."""
+            return self.search_vector_db(query, k)
+
+        return search_vector_db
 
     def tool_load_file_section(self):
-        return tool(partial(self.load_file_section))
+        @tool
+        def load_file_section(path: str, start: int, end: int) -> str:
+            """Load specific lines from a file."""
+            return self.load_file_section(path, start, end)
+
+        return load_file_section
 
     def tool_grep_string(self):
-        return tool(partial(self.grep_string))
+        @tool
+        def grep_string(
+            search: str, page_size: int = 10, page: int = 1
+        ) -> List[Dict[str, str]]:
+            """Search for a string in code files and return matching lines with file name and line number. Supports pagination."""
+            return self.grep_string(search, page_size, page)
+
+        return grep_string
 
     def tool_list_directory(self):
-        return tool(partial(self.list_directory))
+        @tool
+        def list_directory(path: str) -> List[Dict[str, str]]:
+            """List files and folders in a directory with metadata (type file or dir, size in kb if it's file, children count if a dir)."""
+            self.list_directory(path)
+
+        return list_directory
 
     def load_feature_item(self):
         print("load_feature_item")

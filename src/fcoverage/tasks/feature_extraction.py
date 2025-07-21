@@ -97,14 +97,13 @@ class FeatureExtractionTask(TasksBase):
         for test_file in tqdm(get_test_files(self.project_tests)):
             relation = self.realte_test_file_to_features(test_file, features_list)
             test_to_feature[test_file] = relation
-
             time.sleep(4)  # respect rate-limit
 
         feature_to_test = dict()
+        for feature in features_list:
+            feature_to_test[feature.name] = []
         for test, features in test_to_feature.items():
             for feature in features:
-                if feature not in feature_to_test:
-                    feature_to_test[feature] = []
                 if test not in feature_to_test[feature]:
                     feature_to_test[feature].append(test)
 
@@ -116,25 +115,22 @@ class FeatureExtractionTask(TasksBase):
         test_to_feature_prompt_template = self.load_prompt("test_to_feature.txt")
         agent_executor = self.get_tool_calling_llm(
             [
-                self.search_vector_db,
-                self.grep_string,
-                self.load_file_section,
+                self.tool_search_vector_db(),
+                self.tool_grep_string(),
+                self.tool_load_file_section(),
+                self.tool_list_directory(),
             ],
             PromptTemplate.from_template(test_to_feature_prompt_template),
         )
 
         with open(test_path, "r") as f:
             test_code = f.read()
-        test_fixtures = list_available_fixtures(
-            os.path.abspath(self.args["project"]), [self.project_tests], test_path
-        )
 
         response = agent_executor.invoke(
             {
                 "project_name": self.project_name,
                 "project_description": self.project_description,
                 "test_code": test_code,
-                "test_fixtures": test_fixtures,
                 "features_list": features_list,
                 "filename": test_path,
             }

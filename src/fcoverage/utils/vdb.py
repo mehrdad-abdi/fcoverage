@@ -63,17 +63,17 @@ class VectorDBHelper:
     def sync_documents(
         self, documents: List[Document], batch_size=250, sleep_seconds=1
     ):
-        current_ids = [d.metadata["id"] for d in documents]
+        current_doc_ids = {d.id for d in documents}
 
         # 1. Get all existing IDs from the DB
-        existing_ids = self.vectorstore.get()["ids"]
+        existing_ids = set(self.vectorstore.get()["ids"])
 
         # 2. Identify what to delete and what to add
-        ids_to_add = [id_ for id_ in current_ids if id_ not in existing_ids]
-        ids_to_delete = [id_ for id_ in existing_ids if id_ not in current_ids]
+        docs_to_add = [doc for doc in documents if doc.id not in existing_ids]
+        ids_to_delete = [id_ for id_ in existing_ids if id_ not in current_doc_ids]
 
         print(
-            f"sync_documents: documents={len(documents)} ids_to_add={len(ids_to_add)}, ids_to_delete={len(ids_to_delete)}"
+            f"sync_documents: documents={len(documents)} ids_to_add={len(docs_to_add)}, ids_to_delete={len(ids_to_delete)}"
         )
 
         # 3. Delete obsolete entries
@@ -81,12 +81,7 @@ class VectorDBHelper:
             self.vectorstore.delete(ids=ids_to_delete)
 
         # 4. Add new entries
-        if ids_to_add:
-            docs_to_add = []
-            for doc in documents:
-                if doc.metadata["id"] in ids_to_add:
-                    docs_to_add.append(doc)
-
+        if docs_to_add:
             for i in tqdm(range(0, len(docs_to_add), batch_size)):
                 batch = docs_to_add[i : i + batch_size]
                 self.add_documents(batch)
@@ -104,6 +99,6 @@ def index_all_project(
     )
     docs = loader.load()
     for doc in docs:
-        doc.metadata["id"] = hashlib.sha1(doc.page_content.encode("utf-8")).hexdigest()
+        doc.id = hashlib.sha1(doc.page_content.encode("utf-8")).hexdigest()
 
     vdb.sync_documents(docs, batch_size, sleep_seconds)
