@@ -47,7 +47,7 @@ class FeatureDesignTask(TasksBase):
             PromptTemplate.from_template(feature_implementaion_prompt_template),
         )
         ls_output = self.get_ls_output()
-        core_files = self.get_core_files_context(self.feature_item)
+        core_files = self.get_core_files_context()
         response = self.invoke_with_retry(
             agent_executor,
             {
