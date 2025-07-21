@@ -2,6 +2,14 @@ from typing import List
 from pydantic import BaseModel, Field
 
 
+class FeatureManifest(BaseModel):
+    name: str
+    description: str
+    entry_point: str
+    related_test_files: List[str]
+    core_code_files: List[str]
+
+
 class FeatureItem(BaseModel):
     name: str = Field(description="A short name or title for the feature.")
     description: str = Field(
@@ -10,19 +18,11 @@ class FeatureItem(BaseModel):
     entry_point: str = Field(
         description="A description of how a user might access this feature (e.g., 'Through the 'Export' button on the user profile page', or 'Via the `/api/v2/report` endpoint'). If unknown, state 'Unknown'."
     )
-    keywords: None | List[str] = Field(
+    keywords: List[str] = Field(
         description="list of relevant searchable keywords. You expect to see these keywords in the name of related files, classes, methods, functions. To be used in find or grep to discover these code portions.",
-        default=None,
     )
-    queries: None | List[str] = Field(
+    queries: List[str] = Field(
         description="list of relevant RAG queries to use similarity search for retrieve related production code.",
-        default=None,
-    )
-    related_test_files: List[str] = Field(
-        description="This field will be used to store the list of test files related to this feature. Ignore it."
-    )
-    core_code_files: List[str] = Field(
-        description="This field will be used to store the list of core source code files related to this feature. Ignore it."
     )
 
 

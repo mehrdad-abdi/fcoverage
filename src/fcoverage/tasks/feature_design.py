@@ -39,16 +39,17 @@ class FeatureDesignTask(TasksBase):
         feature_implementaion_prompt_template = self.load_prompt("feature_design.txt")
         agent_executor = self.get_tool_calling_llm(
             [
-                self.search_vector_db,
-                self.grep_string,
-                self.load_file_section,
-                self.list_directory,
+                self.tool_search_vector_db(),
+                self.tool_grep_string(),
+                self.tool_load_file_section(),
+                self.tool_list_directory(),
             ],
             PromptTemplate.from_template(feature_implementaion_prompt_template),
         )
         ls_output = self.get_ls_output()
         core_files = self.get_core_files_context(self.feature_item)
-        response = agent_executor.invoke(
+        response = self.invoke_with_retry(
+            agent_executor,
             {
                 "project_name": self.project_name,
                 "project_description": self.project_description,
@@ -57,7 +58,7 @@ class FeatureDesignTask(TasksBase):
                 "feature_entry_point": self.feature_item.entry_point,
                 "core_files": core_files,
                 "ls_output": ls_output,
-            }
+            },
         )
 
         return response["output"]
@@ -86,10 +87,10 @@ class FeatureDesignTask(TasksBase):
         )
         agent_executor = self.get_tool_calling_llm(
             [
-                self.search_vector_db,
-                self.grep_string,
-                self.load_file_section,
-                self.list_directory,
+                self.tool_search_vector_db(),
+                self.tool_grep_string(),
+                self.tool_load_file_section(),
+                self.tool_list_directory(),
             ],
             PromptTemplate.from_template(feature_implementaion_prompt_template),
         )

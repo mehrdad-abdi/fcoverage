@@ -9,8 +9,9 @@ from fcoverage.tasks import (
 
 
 def main():
-    args = get_args()
+    args = vars(get_args())
     os.makedirs(args["out"], exist_ok=True)
+    print(f"args = {args}")
 
     if args["task"] == "extract":
         task = FeatureExtractionTask(args=args)
@@ -19,7 +20,11 @@ def main():
     elif args["task"] == "coverage":
         task = FeatureCoverageTask(args=args)
     task.prepare()
-    return task.run()
+    success = task.run()
+    if success:
+        return 0
+    else:
+        return 1
 
 
 def get_args():

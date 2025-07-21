@@ -29,6 +29,7 @@ dependencies = [
     "googleapis-common-protos==1.70.0",
     "google-api-core==1.34.1",
     "tqdm",
+    "setuptools",
 ]
 
 [project.optional-dependencies]

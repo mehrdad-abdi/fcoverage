@@ -23,10 +23,6 @@ File: {filename}
 {test_code}
 ```
 
-## List of test fixtures
-
-{test_fixtures}
-
 ## agent_scratchpad
 
 {agent_scratchpad}

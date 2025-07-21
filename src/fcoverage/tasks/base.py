@@ -1,12 +1,13 @@
-from json import tool
 import json
 import os
 from pathlib import Path
+import time
 from typing import Dict, List
 from fcoverage.models import FeatureItem
 from fcoverage.utils import prompts
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_core.tools import tool
 
 from fcoverage.utils.vdb import VectorDBHelper
 
@@ -14,26 +15,32 @@ from fcoverage.utils.vdb import VectorDBHelper
 class TasksBase:
     def __init__(self, args):
         self.args = args
-        self.project_name = self.args["project-name"]
-        self.project_description = self.args["project-description"]
-        self.project_src = os.path.join(self.args["project"], self.args["src-path"])
-        self.project_tests = os.path.join(self.args["project"], self.args["test-path"])
+        self.project_name = self.args["project_name"]
+        self.project_description = self.args["project_description"]
+        self.project_src = os.path.join(self.args["project"], self.args["src_path"])
+        self.project_tests = os.path.join(self.args["project"], self.args["test_path"])
         self.model = None
         self.vdb = None
 
     def prepare(self):
         self.load_llm_model()
         self.load_vector_db_helper()
+        self.index_source_code()
 
     def run(self):
         raise NotImplementedError("Subclasses must implement this method")
 
+    def zzz(self, seconds: int = 5):
+        time.sleep(seconds)
+
     def load_prompt(self, prompt_filename):
+        print(f"load_prompt -> {prompt_filename}")
         return prompts.read_prompt_file(prompt_filename)
 
     def load_llm_model(self):
-        model_name = self.args.get("llm-model")
-        model_provider = self.args.get("llm-provider")
+        print("load_llm_model")
+        model_name = self.args.get("llm_model")
+        model_provider = self.args.get("llm_provider")
 
         self.model = init_chat_model(
             model_name,
@@ -41,32 +48,69 @@ class TasksBase:
         )
 
     def load_vector_db_helper(self):
+        print("load_vector_db_helper")
         self.vdb = VectorDBHelper(
-            persist_directory=self.args["vector-db-persist"],
+            persist_directory=self.args["vector_db_persist"],
             collection_name="fcoverage",
-            embedding_model=self.args["embedding-model"],
-            embedding_provider=self.args["embedding-provider"],
+            embedding_model=self.args["embedding_model"],
+            embedding_provider=self.args["embedding_provider"],
         )
 
-    def get_tool_calling_llm(self, tools, prompt_template, memory=None, verbose=False):
+    def model_with_retry(self, model=None):
+        if model is None:
+            model = self.model
+        return model.with_retry(
+            wait_exponential_jitter=True,
+            stop_after_attempt=5,  # 2, 4, 8, 16, 32 seconds
+            exponential_jitter_params={"initial": 2},
+        )
+
+    def get_tool_calling_llm(
+        self,
+        tools,
+        prompt_template,
+        memory=None,
+        verbose=False,
+    ):
+        print("get_tool_calling_llm")
         agent = create_tool_calling_agent(
             llm=self.model,
             tools=tools,
             prompt=prompt_template,
         )
-        return AgentExecutor(agent=agent, tools=tools, verbose=verbose, memory=memory)
+        executor = AgentExecutor(
+            agent=agent, tools=tools, verbose=verbose, memory=memory
+        )
 
-    @tool
+        return executor
+
+    def invoke_with_retry(
+        self,
+        executor,
+        input_dict,
+        max_retries=3,
+        initial_retry_delay=2,
+    ):
+        retry_delay = initial_retry_delay
+        for attempt in range(max_retries):
+            try:
+                return executor.invoke(input_dict)
+            except Exception as e:
+                print(f"[Retry {attempt+1}/{max_retries}] Agent execution failed: {e}")
+                if attempt < max_retries - 1:
+                    print(f"Sleep {retry_delay} seconds.")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+                else:
+                    raise e
+
     def search_vector_db(self, query: str, k: int = 5) -> List[str]:
-        """Search the vector DB for chunks related to a natural language query."""
         results = self.vdb.search(query, k=k)
         return [
             f"[{doc.metadata.get('source')}]\n{doc.page_content}" for doc in results
         ]
 
-    @tool
     def load_file_section(self, path: str, start: int, end: int) -> str:
-        """Load specific lines from a file."""
         try:
             with open(path, "r") as f:
                 lines = f.readlines()
@@ -74,11 +118,9 @@ class TasksBase:
         except Exception as e:
             return f"Error reading file: {e}"
 
-    @tool
     def grep_string(
         self, search: str, page_size: int = 10, page: int = 1
     ) -> List[Dict[str, str]]:
-        """Search for a string in code files and return matching lines with file name and line number. Supports pagination."""
         result = []
         for file in Path(self.args["project"]).rglob("*.py"):
             try:
@@ -101,10 +143,7 @@ class TasksBase:
         end_index = start_index + page_size
         return result[start_index:end_index]
 
-    @tool
     def list_directory(self, path: str) -> List[Dict[str, str]]:
-        """List files and folders in a directory with metadata (type file or dir, size in kb if it's file, children count if a dir)."""
-
         path_abs = os.path.join(self.args["project"], path)
         path_obj = Path(path_abs)
         if not path_obj.exists():
@@ -138,20 +177,57 @@ class TasksBase:
                 )
         return results
 
+    def tool_search_vector_db(self):
+        @tool
+        def search_vector_db(query: str, k: int = 5) -> List[str]:
+            """Search the vector DB for chunks related to a natural language query."""
+            return self.search_vector_db(query, k)
+
+        return search_vector_db
+
+    def tool_load_file_section(self):
+        @tool
+        def load_file_section(path: str, start: int, end: int) -> str:
+            """Load specific lines from a file."""
+            return self.load_file_section(path, start, end)
+
+        return load_file_section
+
+    def tool_grep_string(self):
+        @tool
+        def grep_string(
+            search: str, page_size: int = 10, page: int = 1
+        ) -> List[Dict[str, str]]:
+            """Search for a string in code files and return matching lines with file name and line number. Supports pagination."""
+            return self.grep_string(search, page_size, page)
+
+        return grep_string
+
+    def tool_list_directory(self):
+        @tool
+        def list_directory(path: str) -> List[Dict[str, str]]:
+            """List files and folders in a directory with metadata (type file or dir, size in kb if it's file, children count if a dir)."""
+            self.list_directory(path)
+
+        return list_directory
+
     def load_feature_item(self):
-        definition_filepath = self.args["feature-definition"]
+        print("load_feature_item")
+        definition_filepath = self.args["feature_definition"]
         with open(definition_filepath, "r") as f:
             feature_item_json = json.load(f)
         return FeatureItem(**feature_item_json)
 
     def load_feature_implementation(self):
-        design = self.args["feature-design"]
+        print("load_feature_implementation")
+        design = self.args["feature_design"]
         with open(design, "r") as f:
             content = f.read()
         return content
 
     def load_test_cases(self):
-        test_cases = self.args["feature-test-cases"]
+        print("load_test_cases")
+        test_cases = self.args["feature_test_cases"]
         with open(test_cases, "r") as f:
             content = f.read()
         return content

@@ -78,19 +78,22 @@ class FeatureCoverageTask(TasksBase):
         )
         agent_executor = self.get_tool_calling_llm(
             tools=[
-                self.search_vector_db,
-                self.grep_string,
-                self.load_file_section,
+                self.tool_search_vector_db(),
+                self.tool_grep_string(),
+                self.tool_load_file_section(),
             ],
             prompt_template=prompt,
             memory=memory,
         )
 
-        agent_executor.invoke({"input": self.load_prompt("feature_tests_coverage.txt")})
-        agent_executor.invoke(
-            {"input": self.load_prompt("feature_tests_improvements.txt")}
+        self.invoke_with_retry(
+            agent_executor, {"input": self.load_prompt("feature_tests_coverage.txt")}
         )
-        response = agent_executor.invoke(
-            {"input": self.load_prompt("feature_tests_report.txt")}
+        self.invoke_with_retry(
+            agent_executor,
+            {"input": self.load_prompt("feature_tests_improvements.txt")},
+        )
+        response = self.invoke_with_retry(
+            agent_executor, {"input": self.load_prompt("feature_tests_report.txt")}
         )
         return response["output"]
