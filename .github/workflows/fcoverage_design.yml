@@ -1,4 +1,4 @@
-name: 'fCoverage - Feature Extraction'
+name: 'fCoverage - Feature Design'
 
 on:
   workflow_dispatch:
@@ -7,14 +7,9 @@ on:
         description: 'Repository name for the project-under-test with owner. For example, actions/checkout'
         required: true
         default: 'ytdl-org/youtube-dl'
-      docs:
-        description: 'Comma separated list of docs to be used in feature extraction.'
+      feature_name:
+        description: 'The name of the feature to be analyzed.'
         required: true
-        default: 'README.md, ChangeLog, youtube_dl/options.py'
-      max_features:
-        description: 'The max number of features to extract'
-        type: int
-        default: 10
       src_path:
         description: 'src folder within the repository'
         default: 'youtube-dl'
@@ -35,11 +30,14 @@ on:
           - "google_genai:gemini-embedding-001"
       vectorstore_download:
         description: 'The run id for a previous workflow run that has generated a vectorstore artifact.'
-        required: false
+        required: true
         type: int
         default: 0
-      
-
+      features_download:
+        description: 'The run id for a previous workflow run that has generated a feature list artifact.'
+        required: true
+        type: int
+        default: 0
 
 jobs:
   build:
@@ -83,6 +81,15 @@ jobs:
           echo "llm_provider=$MODEL_PROVIDER" >> $GITHUB_OUTPUT
           echo "embeddings_model=$EMB_MODEL_NAME" >> $GITHUB_OUTPUT
           echo "embeddings_provider=$EMB_MODEL_PROVIDER" >> $GITHUB_OUTPUT
+      - name: Extract feature name
+        env:
+          FEATURE_NAME: ${{ github.event.inputs.feature_name }}
+        id: feature
+        run: |
+          echo "name=$FEATURE_NAME" >> $GITHUB_OUTPUT
+          echo "feature_filename=${{ github.workspace }}/target_repository/fcoverage/features-definition-${FEATURE_NAME// /_}.json"
+          echo "desing_filename=${{ github.workspace }}/target_repository/fcoverage/${FEATURE_NAME// /_}/design.md"
+          echo "testcases_filename=${{ github.workspace }}/target_repository/fcoverage/${FEATURE_NAME// /_}/test_cases.md"
       - name: 'Revert vectorstore'
         if: ${{ github.event.inputs.vectorstore_download != 0 }}
         uses: actions/download-artifact@v4
@@ -91,6 +98,19 @@ jobs:
           run-id: ${{ github.event.inputs.vectorstore_download }}
           github-token: ${{ github.token }}
           path: ${{ github.workspace }}/target_repository/vector-db
+      - name: 'Revert features'
+        if: ${{ github.event.inputs.features_download != 0 }}
+        uses: actions/download-artifact@v4
+        with:
+          name: "features_list"
+          run-id: ${{ github.event.inputs.features_download }}
+          github-token: ${{ github.token }}
+          path: ${{ github.workspace }}/target_repository/fcoverage
+      - name: "Make sure the file name is correct"
+        env:
+          FEATURE_NAME: ${{ github.event.inputs.feature_name }}
+        run: |
+          cat "${{ github.workspace }}/target_repository/fcoverage/features-definition-${FEATURE_NAME// /_}.json"
       - name: 'Check out fcoverage'
         uses: actions/checkout@v4
         with:
@@ -122,13 +142,14 @@ jobs:
           LANGCHAIN_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          FEATURE_NAME: ${{ github.event.inputs.feature_name }}
         run: |
           ls
           fcoverage \
             --project-name "${{ steps.repo_info.outputs.repo_name }}" \
             --project-description "${{ steps.repo_info.outputs.description }}" \
             --project . \
-            --task extract \
+            --task design \
             --out fcoverage \
             --vector-db-persist vector-db \
             --src-path ${{ github.event.inputs.src_path }} \
@@ -137,14 +158,17 @@ jobs:
             --llm-provider ${{ steps.model_info.outputs.llm_provider }} \
             --embedding-model ${{ steps.model_info.outputs.embeddings_model }} \
             --embedding-provider ${{ steps.model_info.outputs.embeddings_provider }} \
-            --docs "${{ github.event.inputs.docs }}" \
-            --max-features ${{ github.event.inputs.max_features }}
-      - name: 'Build artifacts features list'
+            --feature-definition "${{ steps.feature.outputs.feature_filename }}"
+      - name: 'Build artifacts feature design'
         uses: actions/upload-artifact@v4
-        if: always() 
         with:
-          name: features_list
-          path: ${{ github.workspace }}/target_repository/fcoverage
+          name: feature_design
+          path: ${{ steps.feature.outputs.desing_filename }}
+      - name: 'Build artifacts test cases'
+        uses: actions/upload-artifact@v4
+        with:
+          name: feature_test_cases
+          path: ${{ steps.feature.outputs.testcases_filename }}
       - name: 'Build artifacts vectorstore'
         uses: actions/upload-artifact@v4
         if: always() 
@@ -153,16 +177,14 @@ jobs:
           path: ${{ github.workspace }}/target_repository/vector-db
       - name: Add Report to Job Summary
         run: |
-          echo "# Extracted Features" >> $GITHUB_STEP_SUMMARY
+          echo "# Analysis Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
-          for file in path/to/your/json_folder/*.json; do
-            echo "## \`$(basename "$file")\`" >> $GITHUB_STEP_SUMMARY
-            echo '```json' >> $GITHUB_STEP_SUMMARY
-            jq '.' "$file" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-          done
-          
+          cat ${{ steps.feature.outputs.desing_filename }} >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "# Test cases" >> $GITHUB_STEP_SUMMARY
+          cat ${{ steps.feature.outputs.testcases_filename }} >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "**Run completed at:** $(date)" >> $GITHUB_STEP_SUMMARY
+
