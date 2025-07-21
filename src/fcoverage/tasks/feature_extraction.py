@@ -1,6 +1,6 @@
 import json
 import os
-from typing import List, Set
+from typing import Dict, List, Set
 from fcoverage.models import (
     FeatureItem,
     ProjectFeatures,
@@ -91,20 +91,25 @@ class FeatureExtractionTask(TasksBase):
             sleep_seconds=1,
         )
 
-    def extract_test_files(self, features_list: ProjectFeatures):
+    def extract_test_files(
+        self, features_list: ProjectFeatures
+    ) -> Dict[str, List[str]]:
         test_to_feature = dict()
         for test_file in tqdm(get_test_files(self.project_tests)):
             relation = self.realte_test_file_to_features(test_file, features_list)
             test_to_feature[test_file] = relation.related_features
             self.zzz()
 
-        feature_to_test = dict()
+        feature_to_test: Dict[str, List[str]] = dict()
         for feature in features_list.features:
             feature_to_test[feature.name] = []
         for test, features in test_to_feature.items():
-            for feature in features:
-                if test not in feature_to_test[feature]:
-                    feature_to_test[feature].append(test)
+            for feature_name in features:
+                if feature_name not in feature_to_test:
+                    print(f"Skipping unknown feature {test} -> {feature_name}")
+                    continue
+                if test not in feature_to_test[feature_name]:
+                    feature_to_test[feature_name].append(test)
 
         return feature_to_test
 

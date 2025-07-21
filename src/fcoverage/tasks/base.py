@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 import time
-from typing import Dict, List
+from typing import Any, Dict, List
 from fcoverage.models import FeatureItem
 from fcoverage.utils import prompts
 from langchain.chat_models import init_chat_model
@@ -120,7 +120,7 @@ class TasksBase:
 
     def grep_string(
         self, search: str, page_size: int = 10, page: int = 1
-    ) -> List[Dict[str, str]]:
+    ) -> List[Dict[str, Any]]:
         result = []
         for file in Path(self.args["project"]).rglob("*.py"):
             try:
@@ -207,7 +207,7 @@ class TasksBase:
         @tool
         def list_directory(path: str) -> List[Dict[str, str]]:
             """List files and folders in a directory with metadata (type file or dir, size in kb if it's file, children count if a dir)."""
-            self.list_directory(path)
+            return self.list_directory(path)
 
         return list_directory
 
