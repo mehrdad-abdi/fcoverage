@@ -87,9 +87,9 @@ jobs:
         id: feature
         run: |
           echo "name=$FEATURE_NAME" >> $GITHUB_OUTPUT
-          echo "feature_filename=${{ github.workspace }}/target_repository/fcoverage/features-definition-${FEATURE_NAME// /_}.json"
-          echo "desing_filename=${{ github.workspace }}/target_repository/fcoverage/${FEATURE_NAME// /_}/design.md"
-          echo "testcases_filename=${{ github.workspace }}/target_repository/fcoverage/${FEATURE_NAME// /_}/test_cases.md"
+          echo "feature_filename=${{ github.workspace }}/target_repository/fcoverage/features-definition-${FEATURE_NAME// /_}.json" >> $GITHUB_OUTPUT
+          echo "design_filename=${{ github.workspace }}/target_repository/fcoverage/${FEATURE_NAME// /_}/design.md" >> $GITHUB_OUTPUT
+          echo "testcases_filename=${{ github.workspace }}/target_repository/fcoverage/${FEATURE_NAME// /_}/test_cases.md" >> $GITHUB_OUTPUT
       - name: 'Revert vectorstore'
         if: ${{ github.event.inputs.vectorstore_download != 0 }}
         uses: actions/download-artifact@v4
@@ -163,7 +163,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: feature_design
-          path: ${{ steps.feature.outputs.desing_filename }}
+          path: ${{ steps.feature.outputs.design_filename }}
       - name: 'Build artifacts test cases'
         uses: actions/upload-artifact@v4
         with:
@@ -179,7 +179,7 @@ jobs:
         run: |
           echo "# Analysis Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          cat ${{ steps.feature.outputs.desing_filename }} >> $GITHUB_STEP_SUMMARY
+          cat ${{ steps.feature.outputs.design_filename }} >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "# Test cases" >> $GITHUB_STEP_SUMMARY
