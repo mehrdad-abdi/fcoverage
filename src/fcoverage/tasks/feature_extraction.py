@@ -10,7 +10,6 @@ from fcoverage.models import (
 from tqdm import tqdm
 from fcoverage.utils.code.pytest_utils import get_test_files
 from fcoverage.utils.prompts import escape_markdown
-from fcoverage.utils.vdb import index_all_project
 from .base import TasksBase
 from langchain_core.prompts import PromptTemplate
 
@@ -79,17 +78,6 @@ class FeatureExtractionTask(TasksBase):
             self.model.with_structured_output(ProjectFeatures)
         )
         return structured_llm.invoke(prompt_feature_extraction)
-
-    def index_source_code(self):
-        print("index_source_code")
-        index_all_project(
-            self.vdb,
-            self.args["project"],
-            "**/*.py",
-            [".py"],
-            batch_size=250,
-            sleep_seconds=1,
-        )
 
     def extract_test_files(
         self, features_list: ProjectFeatures

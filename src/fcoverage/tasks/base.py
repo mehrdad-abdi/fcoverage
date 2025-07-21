@@ -9,7 +9,7 @@ from langchain.chat_models import init_chat_model
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 from langchain_core.tools import tool
 
-from fcoverage.utils.vdb import VectorDBHelper
+from fcoverage.utils.vdb import VectorDBHelper, index_all_project
 
 
 class TasksBase:
@@ -231,3 +231,14 @@ class TasksBase:
         with open(test_cases, "r") as f:
             content = f.read()
         return content
+
+    def index_source_code(self):
+        print("index_source_code")
+        index_all_project(
+            self.vdb,
+            self.args["project"],
+            "**/*.py",
+            [".py"],
+            batch_size=250,
+            sleep_seconds=1,
+        )
