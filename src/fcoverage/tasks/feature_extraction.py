@@ -75,7 +75,9 @@ class FeatureExtractionTask(TasksBase):
                 "n_features": self.args["max_features"],
             }
         )
-        structured_llm = self.model.with_structured_output(ProjectFeatures)
+        structured_llm = self.model_with_retry(
+            self.model.with_structured_output(ProjectFeatures)
+        )
         return structured_llm.invoke(prompt_feature_extraction)
 
     def index_source_code(self):
@@ -97,7 +99,7 @@ class FeatureExtractionTask(TasksBase):
             self.zzz()
 
         feature_to_test = dict()
-        for feature in features_list:
+        for feature in features_list.features:
             feature_to_test[feature.name] = []
         for test, features in test_to_feature.items():
             for feature in features:
@@ -124,18 +126,21 @@ class FeatureExtractionTask(TasksBase):
         with open(test_path, "r") as f:
             test_code = f.read()
 
-        response = agent_executor.invoke(
+        response = self.invoke_with_retry(
+            agent_executor,
             {
                 "project_name": self.project_name,
                 "project_description": self.project_description,
                 "test_code": test_code,
                 "features_list": features_list,
                 "filename": test_path,
-            }
+            },
         )
 
         result = response["output"]
-        structured_llm = self.model.with_structured_output(TestToFeatures)
+        structured_llm = self.model_with_retry(
+            self.model.with_structured_output(TestToFeatures)
+        )
         self.zzz()
         test_to_features = structured_llm.invoke(result)
         return test_to_features

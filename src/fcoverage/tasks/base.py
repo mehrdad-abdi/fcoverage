@@ -57,14 +57,53 @@ class TasksBase:
             embedding_provider=self.args["embedding_provider"],
         )
 
-    def get_tool_calling_llm(self, tools, prompt_template, memory=None, verbose=False):
+    def model_with_retry(self, model=None):
+        if model is None:
+            model = self.model
+        return model.with_retry(
+            wait_exponential_jitter=True,
+            stop_after_attempt=5,  # 2, 4, 8, 16, 32 seconds
+            exponential_jitter_params={"initial": 2},
+        )
+
+    def get_tool_calling_llm(
+        self,
+        tools,
+        prompt_template,
+        memory=None,
+        verbose=False,
+    ):
         print("get_tool_calling_llm")
         agent = create_tool_calling_agent(
             llm=self.model,
             tools=tools,
             prompt=prompt_template,
         )
-        return AgentExecutor(agent=agent, tools=tools, verbose=verbose, memory=memory)
+        executor = AgentExecutor(
+            agent=agent, tools=tools, verbose=verbose, memory=memory
+        )
+
+        return executor
+
+    def invoke_with_retry(
+        self,
+        executor,
+        input_dict,
+        max_retries=3,
+        initial_retry_delay=2,
+    ):
+        retry_delay = initial_retry_delay
+        for attempt in range(max_retries):
+            try:
+                return executor.invoke(input_dict)
+            except Exception as e:
+                print(f"[Retry {attempt+1}/{max_retries}] Agent execution failed: {e}")
+                if attempt < max_retries - 1:
+                    print(f"Sleep {retry_delay} seconds.")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2
+                else:
+                    raise e
 
     def search_vector_db(self, query: str, k: int = 5) -> List[str]:
         results = self.vdb.search(query, k=k)

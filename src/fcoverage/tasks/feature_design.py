@@ -48,7 +48,8 @@ class FeatureDesignTask(TasksBase):
         )
         ls_output = self.get_ls_output()
         core_files = self.get_core_files_context(self.feature_item)
-        response = agent_executor.invoke(
+        response = self.invoke_with_retry(
+            agent_executor,
             {
                 "project_name": self.project_name,
                 "project_description": self.project_description,
@@ -57,7 +58,7 @@ class FeatureDesignTask(TasksBase):
                 "feature_entry_point": self.feature_item.entry_point,
                 "core_files": core_files,
                 "ls_output": ls_output,
-            }
+            },
         )
 
         return response["output"]
