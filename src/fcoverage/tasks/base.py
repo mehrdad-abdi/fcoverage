@@ -34,8 +34,12 @@ class TasksBase:
     def zzz(self, seconds: int = 5):
         time.sleep(seconds)
 
-    def relative_path(self, test_path):
-        return str(Path(test_path).relative_to(self.project_root))
+    def relative_path(self, path_str):
+        _path = Path(path_str)
+        if _path.is_relative_to(self.project_root):
+            return str(_path.relative_to(self.project_root))
+        else:
+            return path_str
 
     def load_prompt(self, prompt_filename):
         print(f"load_prompt -> {prompt_filename}")
@@ -241,7 +245,7 @@ class TasksBase:
         print("index_source_code")
         index_all_project(
             self.vdb,
-            self.project_root,
+            [self.project_src, self.project_tests],
             "**/*.py",
             [".py"],
             batch_size=250,

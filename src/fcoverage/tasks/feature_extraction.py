@@ -86,7 +86,9 @@ class FeatureExtractionTask(TasksBase):
         test_to_feature = dict()
         features_list_minimized = self.get_features_list_minimized(features_list)
         for test_file in tqdm(get_test_files(self.project_tests)):
-            relation = self.realte_test_file_to_features(test_file, features_list_minimized)
+            relation = self.realte_test_file_to_features(
+                test_file, features_list_minimized
+            )
             test_to_feature[self.relative_path(test_file)] = relation.related_features
             self.zzz()
 
@@ -106,10 +108,10 @@ class FeatureExtractionTask(TasksBase):
     def get_features_list_minimized(self, features_list: ProjectFeatures):
         items = []
         for feature in features_list.features:
-            dump = json.dumps(feature.model_dump(mode="json"), indent=2)        
+            dump = feature.model_dump(mode="json")
             # delete queries and keywords. extra information may confuse the model
-            del dump["keywords"]
-            del dump["queries"]
+            dump.pop("keywords", None)
+            dump.pop("queries", None)
             items.append(dump)
         return items
 
