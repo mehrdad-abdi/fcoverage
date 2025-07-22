@@ -24,7 +24,7 @@ class FeatureDesignTask(TasksBase):
 
     def write_to_file(self, feature_implementation, feature_testcases):
         folder_name = os.path.join(
-            self.args["out"], self.feature_item.name.repalce(" ", "_")
+            self.args["out"], self.feature_item.name.replace(" ", "_")
         )
         os.makedirs(folder_name, exist_ok=True)
 
