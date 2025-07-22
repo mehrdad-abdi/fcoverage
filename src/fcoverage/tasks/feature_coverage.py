@@ -3,7 +3,7 @@ import uuid
 
 from fcoverage.utils.prompts import escape_markdown, wrap_in_code_block
 from .base import TasksBase
-from langgraph.checkpoint.memory import MemorySaver
+from langchain.memory import ConversationBufferMemory
 from langchain_core.prompts import SystemMessagePromptTemplate, ChatPromptTemplate
 
 
@@ -74,7 +74,9 @@ class FeatureCoverageTask(TasksBase):
             ]
         )
 
-        memory = MemorySaver()
+        memory = ConversationBufferMemory(
+            memory_key="chat_history", return_messages=True
+        )
         agent_executor = self.get_tool_calling_llm(
             tools=[
                 self.tool_search_vector_db(),
@@ -84,22 +86,17 @@ class FeatureCoverageTask(TasksBase):
             prompt_template=prompt,
             memory=memory,
         )
-        thread_id = uuid.uuid4()
-        config = {"configurable": {"thread_id": thread_id}}
 
         self.invoke_with_retry(
             agent_executor,
             {"input": self.load_prompt("feature_tests_coverage.txt")},
-            config=config,
         )
         self.invoke_with_retry(
             agent_executor,
             {"input": self.load_prompt("feature_tests_improvements.txt")},
-            config=config,
         )
         response = self.invoke_with_retry(
             agent_executor,
             {"input": self.load_prompt("feature_tests_report.txt")},
-            config=config,
         )
         return response["output"]

@@ -83,7 +83,7 @@ jobs:
           echo "llm_provider=$MODEL_PROVIDER" >> $GITHUB_OUTPUT
           echo "embeddings_model=$EMB_MODEL_NAME" >> $GITHUB_OUTPUT
           echo "embeddings_provider=$EMB_MODEL_PROVIDER" >> $GITHUB_OUTPUT
-      - name: 'Revert vectorstore'
+      - name: 'Restore vectorstore'
         if: ${{ github.event.inputs.vectorstore_download != 0 }}
         uses: actions/download-artifact@v4
         with:
