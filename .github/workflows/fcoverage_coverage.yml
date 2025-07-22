@@ -95,8 +95,7 @@ jobs:
         id: feature
         run: |
           echo "name=$FEATURE_NAME" >> $GITHUB_OUTPUT
-          ls -al ${{ github.workspace }}/target_repository/fcoverage/
-          tree -d ${{ github.workspace }}/target_repository/fcoverage/
+          tree -d ${{ github.workspace }}
           echo "feature_filename=${{ github.workspace }}/target_repository/fcoverage/features-definition-${FEATURE_NAME// /_}.json"  >> $GITHUB_OUTPUT
           echo "design_filename=${{ github.workspace }}/target_repository/fcoverage/${FEATURE_NAME// /_}/design.md" >> $GITHUB_OUTPUT
           echo "testcases_filename=${{ github.workspace }}/target_repository/fcoverage/${FEATURE_NAME// /_}/test_cases.md" >> $GITHUB_OUTPUT
