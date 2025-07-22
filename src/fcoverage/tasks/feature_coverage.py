@@ -82,7 +82,7 @@ class FeatureCoverageTask(TasksBase):
                 self.tool_load_file_section(),
             ],
             prompt_template=prompt,
-            checkpointer=memory,
+            memory=memory,
         )
         thread_id = uuid.uuid4()
         config = {"configurable": {"thread_id": thread_id}}
