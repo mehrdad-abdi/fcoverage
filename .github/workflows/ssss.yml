@@ -1,0 +1,50 @@
+name: 'fCoverage - Feature Extraction'
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_repository:
+        description: 'Repository name for the project-under-test with owner. For example, actions/checkout'
+        required: true
+        default: 'ytdl-org/youtube-dl'
+      vectorstore_download:
+        description: 'The run id for a previous workflow run that has generated a vectorstore artifact.'
+        required: false
+        type: int
+        default: 46497515026
+      
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Check out ${{ github.event.inputs.target_repository }}"
+        uses: actions/checkout@v4
+        with:
+          repository:  ${{ github.event.inputs.target_repository }}
+          path: ${{github.workspace}}/target_repository
+      - name: 'Revert vectorstore'
+        if: ${{ github.event.inputs.vectorstore_download != 0 }}
+        uses: actions/download-artifact@v4
+        with:
+          name: "features_list"
+          run-id: ${{ github.event.inputs.vectorstore_download }}
+          github-token: ${{ github.token }}
+          path: ${{ github.workspace }}/target_repository/vector-db
+      
+      - name: Add Report to Job Summary
+        run: |
+          echo "# Extracted Features" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          for file in ${{ github.workspace }}/target_repository/fcoverage/*.json; do
+            echo "## \`$(basename "$file")\`" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            jq '.' "$file" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          done
+          
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "**Run completed at:** $(date)" >> $GITHUB_STEP_SUMMARY
