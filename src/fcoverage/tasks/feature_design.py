@@ -76,7 +76,7 @@ class FeatureDesignTask(TasksBase):
                 print(f"File not found: {file}")
                 continue
             result.append(f"File: {file}")
-            with open(file, "w") as f:
+            with open(file, "r") as f:
                 content = f.read()
             result.append("```")
             result.append(escape_markdown(content))
