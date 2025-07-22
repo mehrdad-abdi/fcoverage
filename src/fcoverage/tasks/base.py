@@ -2,14 +2,14 @@ import json
 import os
 from pathlib import Path
 import time
-from typing import Dict, List
-from fcoverage.models import FeatureItem
+from typing import Any, Dict, List
+from fcoverage.models import FeatureManifest
 from fcoverage.utils import prompts
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 from langchain_core.tools import tool
 
-from fcoverage.utils.vdb import VectorDBHelper
+from fcoverage.utils.vdb import VectorDBHelper, index_all_project
 
 
 class TasksBase:
@@ -17,8 +17,9 @@ class TasksBase:
         self.args = args
         self.project_name = self.args["project_name"]
         self.project_description = self.args["project_description"]
-        self.project_src = os.path.join(self.args["project"], self.args["src_path"])
-        self.project_tests = os.path.join(self.args["project"], self.args["test_path"])
+        self.project_root = os.path.abspath(self.args["project"])
+        self.project_src = os.path.join(self.project_root, self.args["src_path"])
+        self.project_tests = os.path.join(self.project_root, self.args["test_path"])
         self.model = None
         self.vdb = None
 
@@ -32,6 +33,13 @@ class TasksBase:
 
     def zzz(self, seconds: int = 5):
         time.sleep(seconds)
+
+    def relative_path(self, path_str):
+        _path = Path(path_str)
+        if _path.is_relative_to(self.project_root):
+            return str(_path.relative_to(self.project_root))
+        else:
+            return path_str
 
     def load_prompt(self, prompt_filename):
         print(f"load_prompt -> {prompt_filename}")
@@ -86,15 +94,16 @@ class TasksBase:
 
     def invoke_with_retry(
         self,
-        executor,
+        executor: AgentExecutor,
         input_dict,
+        config=None,
         max_retries=3,
         initial_retry_delay=2,
     ):
         retry_delay = initial_retry_delay
         for attempt in range(max_retries):
             try:
-                return executor.invoke(input_dict)
+                return executor.invoke(input_dict, config=config)
             except Exception as e:
                 print(f"[Retry {attempt+1}/{max_retries}] Agent execution failed: {e}")
                 if attempt < max_retries - 1:
@@ -120,9 +129,9 @@ class TasksBase:
 
     def grep_string(
         self, search: str, page_size: int = 10, page: int = 1
-    ) -> List[Dict[str, str]]:
+    ) -> List[Dict[str, Any]]:
         result = []
-        for file in Path(self.args["project"]).rglob("*.py"):
+        for file in Path(self.project_root).rglob("*.py"):
             try:
                 with open(file, "r", errors="ignore") as f:
                     for lineno, line in enumerate(f, start=1):
@@ -144,7 +153,7 @@ class TasksBase:
         return result[start_index:end_index]
 
     def list_directory(self, path: str) -> List[Dict[str, str]]:
-        path_abs = os.path.join(self.args["project"], path)
+        path_abs = os.path.join(self.project_root, path)
         path_obj = Path(path_abs)
         if not path_obj.exists():
             return [{"error": f"Path '{path}' does not exist."}]
@@ -207,7 +216,7 @@ class TasksBase:
         @tool
         def list_directory(path: str) -> List[Dict[str, str]]:
             """List files and folders in a directory with metadata (type file or dir, size in kb if it's file, children count if a dir)."""
-            self.list_directory(path)
+            return self.list_directory(path)
 
         return list_directory
 
@@ -216,7 +225,7 @@ class TasksBase:
         definition_filepath = self.args["feature_definition"]
         with open(definition_filepath, "r") as f:
             feature_item_json = json.load(f)
-        return FeatureItem(**feature_item_json)
+        return FeatureManifest(**feature_item_json)
 
     def load_feature_implementation(self):
         print("load_feature_implementation")
@@ -231,3 +240,14 @@ class TasksBase:
         with open(test_cases, "r") as f:
             content = f.read()
         return content
+
+    def index_source_code(self):
+        print("index_source_code")
+        index_all_project(
+            self.vdb,
+            [self.project_src, self.project_tests],
+            "**/*.py",
+            [".py"],
+            batch_size=250,
+            sleep_seconds=1,
+        )

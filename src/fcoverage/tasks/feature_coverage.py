@@ -1,8 +1,9 @@
 import os
+import uuid
 
 from fcoverage.utils.prompts import escape_markdown, wrap_in_code_block
 from .base import TasksBase
-from langchain.memory import ConversationBufferMemory
+from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.prompts import SystemMessagePromptTemplate, ChatPromptTemplate
 
 
@@ -26,7 +27,7 @@ class FeatureCoverageTask(TasksBase):
 
     def write_to_file(self, report):
         folder_name = os.path.join(
-            self.args["out"], self.feature_item.name.repalce(" ", "_")
+            self.args["out"], self.feature_item.name.replace(" ", "_")
         )
         os.makedirs(folder_name, exist_ok=True)
 
@@ -73,9 +74,7 @@ class FeatureCoverageTask(TasksBase):
             ]
         )
 
-        memory = ConversationBufferMemory(
-            memory_key="chat_history", return_messages=True
-        )
+        memory = MemorySaver()
         agent_executor = self.get_tool_calling_llm(
             tools=[
                 self.tool_search_vector_db(),
@@ -83,17 +82,24 @@ class FeatureCoverageTask(TasksBase):
                 self.tool_load_file_section(),
             ],
             prompt_template=prompt,
-            memory=memory,
+            checkpointer=memory,
         )
+        thread_id = uuid.uuid4()
+        config = {"configurable": {"thread_id": thread_id}}
 
         self.invoke_with_retry(
-            agent_executor, {"input": self.load_prompt("feature_tests_coverage.txt")}
+            agent_executor,
+            {"input": self.load_prompt("feature_tests_coverage.txt")},
+            config=config,
         )
         self.invoke_with_retry(
             agent_executor,
             {"input": self.load_prompt("feature_tests_improvements.txt")},
+            config=config,
         )
         response = self.invoke_with_retry(
-            agent_executor, {"input": self.load_prompt("feature_tests_report.txt")}
+            agent_executor,
+            {"input": self.load_prompt("feature_tests_report.txt")},
+            config=config,
         )
         return response["output"]

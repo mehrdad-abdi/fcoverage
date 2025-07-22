@@ -1,6 +1,6 @@
 import os
 from .base import TasksBase
-from fcoverage.models import FeatureItem
+from fcoverage.models import FeatureManifest
 from langchain_core.prompts import PromptTemplate
 from fcoverage.utils.prompts import escape_markdown
 
@@ -9,7 +9,7 @@ class FeatureDesignTask(TasksBase):
 
     def __init__(self, args):
         super().__init__(args)
-        self.feature_item: None | FeatureItem = None
+        self.feature_item: None | FeatureManifest = None
 
     def prepare(self):
         super().prepare()
@@ -24,7 +24,7 @@ class FeatureDesignTask(TasksBase):
 
     def write_to_file(self, feature_implementation, feature_testcases):
         folder_name = os.path.join(
-            self.args["out"], self.feature_item.name.repalce(" ", "_")
+            self.args["out"], self.feature_item.name.replace(" ", "_")
         )
         os.makedirs(folder_name, exist_ok=True)
 
@@ -47,7 +47,7 @@ class FeatureDesignTask(TasksBase):
             PromptTemplate.from_template(feature_implementaion_prompt_template),
         )
         ls_output = self.get_ls_output()
-        core_files = self.get_core_files_context(self.feature_item)
+        core_files = self.get_core_files_context()
         response = self.invoke_with_retry(
             agent_executor,
             {
@@ -72,8 +72,11 @@ class FeatureDesignTask(TasksBase):
     def get_core_files_context(self):
         result = []
         for file in self.feature_item.core_code_files:
+            if not os.path.exists(file):
+                print(f"File not found: {file}")
+                continue
             result.append(f"File: {file}")
-            with open(file, "w") as f:
+            with open(file, "r") as f:
                 content = f.read()
             result.append("```")
             result.append(escape_markdown(content))
@@ -81,7 +84,7 @@ class FeatureDesignTask(TasksBase):
 
         return "\n".join(result)
 
-    def identify_feature_testcases(self, feature_item, feature_implementation):
+    def identify_feature_testcases(self, feature_implementation):
         feature_implementaion_prompt_template = self.load_prompt(
             "feature_generate_ideal_test_cases.txt"
         )
@@ -98,9 +101,9 @@ class FeatureDesignTask(TasksBase):
             {
                 "project_name": self.project_name,
                 "project_description": self.project_description,
-                "feature_definition": feature_item.name,
-                "feature_description": feature_item.description,
-                "feature_entry_point": feature_item.entry_point,
+                "feature_definition": self.feature_item.name,
+                "feature_description": self.feature_item.description,
+                "feature_entry_point": self.feature_item.entry_point,
                 "feature_implementation": feature_implementation,
             }
         )

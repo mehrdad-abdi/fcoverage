@@ -1,8 +1,8 @@
 from pathlib import Path
 
 
-def get_test_files(src_path: str):
-    src_path = Path(src_path).resolve()
+def get_test_files(str_src_path: str):
+    src_path = Path(str_src_path).resolve()
     test_files = set()
     for path in src_path.rglob("test_*.py"):
         if path.is_file():

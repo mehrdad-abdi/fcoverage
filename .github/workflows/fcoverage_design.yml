@@ -10,6 +10,7 @@ on:
       feature_name:
         description: 'The name of the feature to be analyzed.'
         required: true
+        default: 'Proxy Support'
       src_path:
         description: 'src folder within the repository'
         default: 'youtube-dl'
@@ -32,12 +33,12 @@ on:
         description: 'The run id for a previous workflow run that has generated a vectorstore artifact.'
         required: true
         type: int
-        default: 0
+        default: 16426221968
       features_download:
         description: 'The run id for a previous workflow run that has generated a feature list artifact.'
         required: true
         type: int
-        default: 0
+        default: 16426221968
 
 jobs:
   build:
@@ -87,9 +88,9 @@ jobs:
         id: feature
         run: |
           echo "name=$FEATURE_NAME" >> $GITHUB_OUTPUT
-          echo "feature_filename=${{ github.workspace }}/target_repository/fcoverage/features-definition-${FEATURE_NAME// /_}.json"
-          echo "desing_filename=${{ github.workspace }}/target_repository/fcoverage/${FEATURE_NAME// /_}/design.md"
-          echo "testcases_filename=${{ github.workspace }}/target_repository/fcoverage/${FEATURE_NAME// /_}/test_cases.md"
+          echo "feature_filename=${{ github.workspace }}/target_repository/fcoverage/features-definition-${FEATURE_NAME// /_}.json" >> $GITHUB_OUTPUT
+          echo "design_filename=${{ github.workspace }}/target_repository/fcoverage/${FEATURE_NAME// /_}/design.md" >> $GITHUB_OUTPUT
+          echo "testcases_filename=${{ github.workspace }}/target_repository/fcoverage/${FEATURE_NAME// /_}/test_cases.md" >> $GITHUB_OUTPUT
       - name: 'Revert vectorstore'
         if: ${{ github.event.inputs.vectorstore_download != 0 }}
         uses: actions/download-artifact@v4
@@ -111,6 +112,7 @@ jobs:
           FEATURE_NAME: ${{ github.event.inputs.feature_name }}
         run: |
           cat "${{ github.workspace }}/target_repository/fcoverage/features-definition-${FEATURE_NAME// /_}.json"
+          cat "${{ steps.feature.outputs.feature_filename }}"
       - name: 'Check out fcoverage'
         uses: actions/checkout@v4
         with:
@@ -163,7 +165,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: feature_design
-          path: ${{ steps.feature.outputs.desing_filename }}
+          path: ${{ steps.feature.outputs.design_filename }}
       - name: 'Build artifacts test cases'
         uses: actions/upload-artifact@v4
         with:
@@ -179,7 +181,7 @@ jobs:
         run: |
           echo "# Analysis Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          cat ${{ steps.feature.outputs.desing_filename }} >> $GITHUB_STEP_SUMMARY
+          cat ${{ steps.feature.outputs.design_filename }} >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "# Test cases" >> $GITHUB_STEP_SUMMARY
