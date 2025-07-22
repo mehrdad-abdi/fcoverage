@@ -87,15 +87,16 @@ class TasksBase:
 
     def invoke_with_retry(
         self,
-        executor,
+        executor: AgentExecutor,
         input_dict,
+        config=None,
         max_retries=3,
         initial_retry_delay=2,
     ):
         retry_delay = initial_retry_delay
         for attempt in range(max_retries):
             try:
-                return executor.invoke(input_dict)
+                return executor.invoke(input_dict, config=config)
             except Exception as e:
                 print(f"[Retry {attempt+1}/{max_retries}] Agent execution failed: {e}")
                 if attempt < max_retries - 1:
