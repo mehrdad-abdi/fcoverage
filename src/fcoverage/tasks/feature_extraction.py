@@ -1,6 +1,5 @@
 import json
 import os
-from pathlib import Path
 from typing import Any, Dict, List, Set
 from fcoverage.models import (
     FeatureItem,
