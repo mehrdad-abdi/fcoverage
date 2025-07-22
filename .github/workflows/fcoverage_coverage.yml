@@ -10,6 +10,7 @@ on:
       feature_name:
         description: 'The name of the feature to be analyzed.'
         required: true
+        default: 'Subtitle Download'
       src_path:
         description: 'src folder within the repository'
         default: 'youtube-dl'
@@ -32,17 +33,17 @@ on:
         description: 'The run id for a previous workflow run that has generated a vectorstore artifact.'
         required: true
         type: int
-        default: 0
+        default: 16454063596
       features_download:
         description: 'The run id for a previous workflow run that has generated a feature list artifact.'
         required: true
         type: int
-        default: 0
+        default: 16454063596
       design_download:
         description: 'The run id for a previous workflow run that has generated a feature design artifact.'
         required: true
         type: int
-        default: 0
+        default: 16454289329
       
 
 
