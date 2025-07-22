@@ -24,6 +24,7 @@ class FeatureCoverageTask(TasksBase):
     def run(self):
         report = self.create_testing_report()
         self.write_to_file(report)
+        return True
 
     def write_to_file(self, report):
         folder_name = os.path.join(
