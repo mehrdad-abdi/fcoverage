@@ -245,7 +245,7 @@ class TasksBase:
         print("index_source_code")
         index_all_project(
             self.vdb,
-            [self.project_src, self.project_tests],
+            self.project_src,
             "**/*.py",
             [".py"],
             batch_size=250,

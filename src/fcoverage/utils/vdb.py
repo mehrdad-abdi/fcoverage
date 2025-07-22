@@ -90,21 +90,19 @@ class VectorDBHelper:
 
 def index_all_project(
     vdb: VectorDBHelper,
-    project_folders,
+    folder,
     glob,
     suffixes,
     batch_size=250,
     sleep_seconds=1,
 ):
-    docs = []
-    for folder in project_folders:
-        loader = GenericLoader.from_filesystem(
-            folder,
-            glob=glob,
-            suffixes=suffixes,
-            parser=LanguageParser(),
-        )
-        docs.extend(loader.load())
+    loader = GenericLoader.from_filesystem(
+        folder,
+        glob=glob,
+        suffixes=suffixes,
+        parser=LanguageParser(),
+    )
+    docs = loader.load()
     for doc in docs:
         doc.id = hashlib.sha1(doc.page_content.encode("utf-8")).hexdigest()
 
