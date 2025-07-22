@@ -34,6 +34,9 @@ class TasksBase:
     def zzz(self, seconds: int = 5):
         time.sleep(seconds)
 
+    def relative_path(self, test_path):
+        return str(Path(test_path).relative_to(self.project_root))
+
     def load_prompt(self, prompt_filename):
         print(f"load_prompt -> {prompt_filename}")
         return prompts.read_prompt_file(prompt_filename)

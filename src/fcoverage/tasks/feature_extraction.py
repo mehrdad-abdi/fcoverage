@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Set
 from fcoverage.models import (
     FeatureItem,
     ProjectFeatures,
@@ -84,9 +84,10 @@ class FeatureExtractionTask(TasksBase):
         self, features_list: ProjectFeatures
     ) -> Dict[str, List[str]]:
         test_to_feature = dict()
+        features_list_minimized = self.get_features_list_minimized(features_list)
         for test_file in tqdm(get_test_files(self.project_tests)):
-            relation = self.realte_test_file_to_features(test_file, features_list)
-            test_to_feature[test_file] = relation.related_features
+            relation = self.realte_test_file_to_features(test_file, features_list_minimized)
+            test_to_feature[self.relative_path(test_file)] = relation.related_features
             self.zzz()
 
         feature_to_test: Dict[str, List[str]] = dict()
@@ -102,8 +103,18 @@ class FeatureExtractionTask(TasksBase):
 
         return feature_to_test
 
+    def get_features_list_minimized(self, features_list: ProjectFeatures):
+        items = []
+        for feature in features_list.features:
+            dump = json.dumps(feature.model_dump(mode="json"), indent=2)        
+            # delete queries and keywords. extra information may confuse the model
+            del dump["keywords"]
+            del dump["queries"]
+            items.append(dump)
+        return items
+
     def realte_test_file_to_features(
-        self, test_path: str, features_list
+        self, test_path: str, features_list_minimized: List[Dict[str, Any]]
     ) -> TestToFeatures:
         print(f"realte_test_file_to_features: {test_path}")
         test_to_feature_prompt_template = self.load_prompt("test_to_feature.txt")
@@ -126,8 +137,8 @@ class FeatureExtractionTask(TasksBase):
                 "project_name": self.project_name,
                 "project_description": self.project_description,
                 "test_code": test_code,
-                "features_list": features_list,
-                "filename": str(Path(test_path).relative_to(self.project_root)),
+                "features_list": features_list_minimized,
+                "filename": self.relative_path(test_path),
             },
         )
 
@@ -159,4 +170,5 @@ class FeatureExtractionTask(TasksBase):
         print(f"extract_code_files: {feature.name}")
         files_1 = self.look_up_by_keywords_and_grep(feature.keywords)
         files_2 = self.look_up_by_vector_db(feature.queries)
-        return list(files_1.union(files_2))
+        files = [self.relative_path(f) for f in files_1.union(files_2)]
+        return files

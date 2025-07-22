@@ -1,4 +1,4 @@
-name: 'fCoverage - Feature Extraction'
+name: 'fCoverage - SSS'
 
 on:
   workflow_dispatch:
