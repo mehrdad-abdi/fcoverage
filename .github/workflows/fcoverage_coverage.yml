@@ -38,7 +38,7 @@ on:
         required: true
         type: int
         default: 0
-      desing_download:
+      design_download:
         description: 'The run id for a previous workflow run that has generated a feature design artifact.'
         required: true
         type: int
@@ -115,19 +115,19 @@ jobs:
           github-token: ${{ github.token }}
           path: ${{ github.workspace }}/target_repository/fcoverage
       - name: 'Revert feature design'
-        if: ${{ github.event.inputs.desing_download != 0 }}
+        if: ${{ github.event.inputs.design_download != 0 }}
         uses: actions/download-artifact@v4
         with:
           name: "feature_design"
-          run-id: ${{ github.event.inputs.desing_download }}
+          run-id: ${{ github.event.inputs.design_download }}
           github-token: ${{ github.token }}
           path: ${{ steps.feature.outputs.design_filename }}
       - name: 'Revert feature test cases'
-        if: ${{ github.event.inputs.desing_download != 0 }}
+        if: ${{ github.event.inputs.design_download != 0 }}
         uses: actions/download-artifact@v4
         with:
           name: "feature_test_cases"
-          run-id: ${{ github.event.inputs.desing_download }}
+          run-id: ${{ github.event.inputs.design_download }}
           github-token: ${{ github.token }}
           path: ${{ steps.feature.outputs.testcases_filename }}
       - name: "Make sure the file name is correct"
