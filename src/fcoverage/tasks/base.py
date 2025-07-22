@@ -17,8 +17,9 @@ class TasksBase:
         self.args = args
         self.project_name = self.args["project_name"]
         self.project_description = self.args["project_description"]
-        self.project_src = os.path.join(self.args["project"], self.args["src_path"])
-        self.project_tests = os.path.join(self.args["project"], self.args["test_path"])
+        self.project_root = os.path.abspath(self.args["project"])
+        self.project_src = os.path.join(self.project_root, self.args["src_path"])
+        self.project_tests = os.path.join(self.project_root, self.args["test_path"])
         self.model = None
         self.vdb = None
 
@@ -122,7 +123,7 @@ class TasksBase:
         self, search: str, page_size: int = 10, page: int = 1
     ) -> List[Dict[str, Any]]:
         result = []
-        for file in Path(self.args["project"]).rglob("*.py"):
+        for file in Path(self.project_root).rglob("*.py"):
             try:
                 with open(file, "r", errors="ignore") as f:
                     for lineno, line in enumerate(f, start=1):
@@ -144,7 +145,7 @@ class TasksBase:
         return result[start_index:end_index]
 
     def list_directory(self, path: str) -> List[Dict[str, str]]:
-        path_abs = os.path.join(self.args["project"], path)
+        path_abs = os.path.join(self.project_root, path)
         path_obj = Path(path_abs)
         if not path_obj.exists():
             return [{"error": f"Path '{path}' does not exist."}]
@@ -236,7 +237,7 @@ class TasksBase:
         print("index_source_code")
         index_all_project(
             self.vdb,
-            self.args["project"],
+            self.project_root,
             "**/*.py",
             [".py"],
             batch_size=250,

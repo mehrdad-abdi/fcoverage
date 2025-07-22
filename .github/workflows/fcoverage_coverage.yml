@@ -38,6 +38,11 @@ on:
         required: true
         type: int
         default: 0
+      desing_download:
+        description: 'The run id for a previous workflow run that has generated a feature design artifact.'
+        required: true
+        type: int
+        default: 0
       
 
 
@@ -101,6 +106,30 @@ jobs:
           run-id: ${{ github.event.inputs.vectorstore_download }}
           github-token: ${{ github.token }}
           path: ${{ github.workspace }}/target_repository/vector-db
+      - name: 'Revert features'
+        if: ${{ github.event.inputs.features_download != 0 }}
+        uses: actions/download-artifact@v4
+        with:
+          name: "features_list"
+          run-id: ${{ github.event.inputs.features_download }}
+          github-token: ${{ github.token }}
+          path: ${{ github.workspace }}/target_repository/fcoverage
+      - name: 'Revert feature design'
+        if: ${{ github.event.inputs.desing_download != 0 }}
+        uses: actions/download-artifact@v4
+        with:
+          name: "feature_design"
+          run-id: ${{ github.event.inputs.desing_download }}
+          github-token: ${{ github.token }}
+          path: ${{ steps.feature.outputs.design_filename }}
+      - name: 'Revert feature test cases'
+        if: ${{ github.event.inputs.desing_download != 0 }}
+        uses: actions/download-artifact@v4
+        with:
+          name: "feature_test_cases"
+          run-id: ${{ github.event.inputs.desing_download }}
+          github-token: ${{ github.token }}
+          path: ${{ steps.feature.outputs.testcases_filename }}
       - name: "Make sure the file name is correct"
         env:
           FEATURE_NAME: ${{ github.event.inputs.feature_name }}
