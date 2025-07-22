@@ -72,6 +72,9 @@ class FeatureDesignTask(TasksBase):
     def get_core_files_context(self):
         result = []
         for file in self.feature_item.core_code_files:
+            if not os.path.exists(file):
+                print(f"File not found: {file}")
+                continue
             result.append(f"File: {file}")
             with open(file, "w") as f:
                 content = f.read()
