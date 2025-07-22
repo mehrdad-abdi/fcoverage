@@ -84,7 +84,7 @@ class FeatureDesignTask(TasksBase):
 
         return "\n".join(result)
 
-    def identify_feature_testcases(self, feature_item, feature_implementation):
+    def identify_feature_testcases(self, feature_implementation):
         feature_implementaion_prompt_template = self.load_prompt(
             "feature_generate_ideal_test_cases.txt"
         )
@@ -101,9 +101,9 @@ class FeatureDesignTask(TasksBase):
             {
                 "project_name": self.project_name,
                 "project_description": self.project_description,
-                "feature_definition": feature_item.name,
-                "feature_description": feature_item.description,
-                "feature_entry_point": feature_item.entry_point,
+                "feature_definition": self.feature_item.name,
+                "feature_description": self.feature_item.description,
+                "feature_entry_point": self.feature_item.entry_point,
                 "feature_implementation": feature_implementation,
             }
         )
