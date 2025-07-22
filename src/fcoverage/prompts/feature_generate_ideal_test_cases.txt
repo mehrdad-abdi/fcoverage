@@ -13,3 +13,7 @@ Include happy path tests, boundary conditions and expected errors, and all other
 ### How feature is implemented
 
 {feature_implementation}
+
+## agent_scratchpad
+
+{agent_scratchpad}
