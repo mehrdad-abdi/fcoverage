@@ -127,9 +127,7 @@ class FeatureExtractionTask(TasksBase):
                 "project_description": self.project_description,
                 "test_code": test_code,
                 "features_list": features_list,
-                "filename": str(
-                    test_path_relative=Path(test_path).relative_to(self.project_root)
-                ),
+                "filename": str(Path(test_path).relative_to(self.project_root)),
             },
         )
 
